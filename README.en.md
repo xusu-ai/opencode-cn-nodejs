@@ -1,229 +1,120 @@
 <p align="center">
-  <a href="https://gitee.com/xusuai/opencode-cn">
+  <a href="https://github.com/xusu-ai/opencode-cn-nodejs">
     <picture>
       <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
       <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="OpenCode-CN logo">
+      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="OpenCode-CN-NodeJS logo">
     </picture>
   </a>
 </p>
-<p align="center">The Open Source AI Coding Agent · China Edition</p>
+<p align="center">Open-Source AI Coding Agent · Pure Node.js Edition · Old-Hardware Friendly</p>
 <p align="center">
-  <a href="https://gitee.com/xusuai/opencode-cn/releases"><img alt="Release" src="https://img.shields.io/badge/release-v1.14.21--CN-blue?style=flat-square" /></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-282%20pass-brightgreen?style=flat-square" />
-  <img alt="Security" src="https://img.shields.io/badge/security-132%20tests-blue?style=flat-square" />
-  <img alt="Hardening" src="https://img.shields.io/badge/hardened-8%20rounds-orange?style=flat-square" />
-  <img alt="IME" src="https://img.shields.io/badge/IME-Chinese%20Input%20%E2%9C%93-brightgreen?style=flat-square" />
-  <img alt="i18n" src="https://img.shields.io/badge/i18n-634%2B%20keys-green?style=flat-square" />
+  <a href="https://github.com/xusu-ai/opencode-cn-nodejs/releases"><img alt="Release" src="https://img.shields.io/badge/release-v1.14.21--CN--NodeJS-blue?style=flat-square" /></a>
+  <img alt="Runtime" src="https://img.shields.io/badge/runtime-Node.js%20%7C%20tsx-brightgreen?style=flat-square" />
+  <img alt="Compatibility" src="https://img.shields.io/badge/compat-Node.js%2018%2B-success?style=flat-square" />
+  <img alt="i18n" src="https://img.shields.io/badge/i18n-100%25%20Chinese-brightgreen?style=flat-square" />
+  <img alt="IME" src="https://img.shields.io/badge/IME-Chinese%20Input%20Supported-brightgreen?style=flat-square" />
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> |
-  <a href="README.zh.md">简体中文</a>
+  <a href="README.en.md">English</a> | <a href="README.zh.md">简体中文</a>
 </p>
 
-[![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://gitee.com/xusuai/opencode-cn)
-
 ---
 
-## 🚀 Quick Install
+## 🎯 Project Overview
 
-### Binary Releases (Recommended)
+**OpenCode-CN-NodeJS** is a deeply customized China-region fork of [OpenCode](https://github.com/opencode-ai/opencode), with these key differentiators:
 
-Download pre-compiled binaries for your platform from [Releases](https://gitee.com/xusuai/opencode-cn/releases):
-
-| Platform | Arch | Filename | Notes |
-|----------|------|----------|-------|
-| Linux | x86_64 | `opencode-linux-x64.tar.gz` | Mainstream servers/desktops (AVX2 required) |
-| Linux | x86_64 | `opencode-linux-x64-baseline.tar.gz` | Older CPUs without AVX2 |
-| Linux | ARM64 | `opencode-linux-arm64.tar.gz` | Raspberry Pi / ARM servers |
-| Linux | x86_64 (musl) | `opencode-linux-x64-musl.tar.gz` | Alpine Linux (AVX2 required) |
-| Linux | x86_64 (musl) | `opencode-linux-x64-musl-baseline.tar.gz` | Alpine Linux without AVX2 |
-| Linux | ARM64 (musl) | `opencode-linux-arm64-musl.tar.gz` | Alpine ARM |
-| macOS | Apple Silicon | `opencode-darwin-arm64.zip` | M1/M2/M3/M4 |
-| macOS | Intel | `opencode-darwin-x64.zip` | Intel Mac (AVX2 required) |
-| macOS | Intel | `opencode-darwin-x64-baseline.zip` | Older Intel Macs |
-| Windows | ARM64 | `opencode-windows-arm64.zip` | ARM Windows |
-| Windows | x86_64 | `opencode-windows-x64.zip` | 64-bit Windows (AVX2 required) |
-| Windows | x86_64 | `opencode-windows-x64-baseline.zip` | Windows without AVX2 |
-
-> 💡 **Need AVX2?** Most x86 CPUs from 2015+ support it. When in doubt, choose the `baseline` build.
-
-```bash
-# Linux / macOS
-tar xzf opencode-linux-x64.tar.gz
-chmod +x opencode
-sudo mv opencode /usr/local/bin/
-
-# Windows
-# Extract opencode-windows-x64.zip, place opencode.exe in a PATH directory
-```
-
-### Web Deployment Mode
-
-OpenCode-CN supports a web server mode for remote browser access:
-
-```bash
-# Start web server
-opencode serve --port 8090 --hostname 0.0.0.0
-
-# Visit http://your-server:8090
-```
-
-### Run from Source
-
-```bash
-# Clone the repo
-git clone https://gitee.com/xusuai/opencode-cn.git
-cd opencode-cn
-
-# Install dependencies (requires Bun 1.3+)
-bun install
-
-# Dev mode
-bun run --cwd packages/opencode dev
-
-# Web server mode
-bun run --cwd packages/opencode src/index.ts serve --port 8090 --hostname 0.0.0.0
-```
-
----
-
-## ✨ China Edition Features
-
-### 🌐 Full Chinese Localization (i18n)
-
-OpenCode TUI supports **Chinese/English one-key switching**:
-
-- **634+ translation keys** covering all TUI elements — command palette, status bar, dialogs, tips, help, errors
-- Type `/locale zh` for Chinese, `/locale en` for English — **no restart required**
-- Missing keys fall back to English automatically
-
-### 🀄 Chinese Input Method (IME) Support
-
-OpenCode is the **first terminal-based AI coding agent** to support **Chinese (CJK) input methods** natively:
-
-- **Root cause discovered**: opentui's `createCliRenderer` applies `null ?? {}` to `useKittyKeyboard`, so setting `null` actually **enables** Kitty protocol — encoding all keystrokes as CSI escape sequences that bypass IME composition
-- **Fix**: Explicit `renderer.disableKittyKeyboard()` after creation, sending `\x1b[>1u` to disable Kitty protocol
-- **Environment**: IBus / Fcitx5 auto-detected; works with `GTK_IM_MODULE=ibus` / `XMODIFIERS=@im=ibus`
-- **Result**: Full Pinyin input with candidate selection works in gnome-terminal, WezTerm, etc.
-
-### 🔧 Volcano Ark & Domestic Model Compatibility
-
-Fixed `eager_input_streaming` compatibility issues for Volcano Ark (ARK), GLM, and other Chinese model providers.
-
----
-
-## 🔒 Security Hardening
-
-Five rounds of security audit with **132 dedicated security tests**:
-
-- **Path traversal protection** — `AppFileSystem.contains()` resolves and normalizes paths
-- **Environment variable sanitization** — Child processes don't inherit sensitive keys
-- **Sensitive info redaction** — `redactSensitiveInfo()` strips API keys from crash dumps
-- **ANSI injection defense** — MCP tool output stripped of control characters
-- **Clipboard TOCTOU fix** — Temp clipboard files use cryptographic random suffixes
-- **HTTP error safety** — 500 responses don't expose stack traces
-
-See [SECURITY-REPORT.md](./SECURITY-REPORT.md) for the full 36-finding audit.
-
----
-
-## ⚡ Performance & Diagnostics
-
-- **`/diag` command** — Real-time performance panel
-- **Virtual message list** — `MAX_VISIBLE_MESSAGES=50` with smart truncation for 100K+ message sessions
-- **Text backpressure** — `MAX_PART_LINES=5000` / `MAX_PART_CHARS=500_000`
-- **Crash dump** — Automatic crash dump with sensitive info redacted
-- **Input debounce** — Keystroke debouncing to avoid unnecessary re-renders
-
-See [PERF-REPORT.md](./PERF-REPORT.md) for detailed results.
-
----
-
-## 🛡️ Stability
-
-- **Event leak fixes** — 11 `event.on()` listeners fixed with `onCleanup()`
-- **Deep memory safety** — 15 additional hardening patches
-- **Storage engine fault tolerance** — Graceful degradation when KV store unavailable
-- **Locale fallback** — Missing i18n keys fall back to English
-
-See [STABILITY-REPORT.md](./STABILITY-REPORT.md) for the full report.
-
----
-
-## 🏆 Eight Rounds of Hardening — Production Quality
-
-| Round | Theme | Fixes | Tests |
-|-------|-------|-------|-------|
-| 1 | 🌐 i18n Chinese Localization | 15+ | 28 |
-| 2 | 🛡️ Event Leak & Memory Safety | 11+ | 22 |
-| 3 | 🔧 Deep Memory & Crash Prevention | 15+ | 35 |
-| 4 | ⚡ Performance & Observability | 8+ | 44 |
-| 5 | 🧱 Robustness & Fault Tolerance | 10+ | 87 |
-| 6 | 🔒 Security Audit & CI | 8 | 132 |
-| 7 | 🀄 IME Fix + Auto-Update Disable | 3 | 282 |
-| 8 | 🚀 Release Hardening & Binary | 5+ | 282 |
-
-**Key metrics:** 70+ fixes · 282 tests passing · 0 typecheck errors · 36-item security audit (8 critical/high fixed) · **Chinese IME working** ✓
-
-See [PROJECT-STATUS.md](./PROJECT-STATUS.md) for the full quality dashboard.
-
----
-
-## 🤖 Built-in Agents
-
-Switch between two built-in agents with the `Tab` key:
-
-- **build** — Default, full-access development agent
-- **plan** — Read-only agent for analysis and code exploration
-  - Denies file edits by default
-  - Asks permission before running bash commands
-  - Ideal for exploring unfamiliar codebases
-
-Also includes a **general** subagent for complex searches. Invoke with `@general`.
-
----
-
-## 📋 TUI Commands
-
-| Command | Description |
+| Feature | Description |
 |---------|-------------|
-| `/locale zh` | Switch UI to Chinese |
-| `/locale en` | Switch UI to English |
-| `/diag` | Open diagnostics panel |
-| `/compact` | Compact conversation history |
-| `/clear` | Clear current session |
-| `/theme <name>` | Switch color theme |
-| `/share` | Share session via URL |
-| `Tab` | Switch between build/plan agents |
-| `F9` | Open tools dialog |
-| `?` | Show help |
+| 🟢 **Pure Node.js Runtime** | No Bun required — just `npm install` + `npx tsx` to start |
+| 💻 **Old Hardware Compatible** | Low memory footprint, no AVX/AVX2 instruction set requirement, runs on vintage CPUs |
+| 🇨🇳 **Fully Chinese Localized** | 100% Chinese UI, AI conversations, error messages, and status info |
+| ⌨️ **Chinese CLI** | All terminal output, interactive prompts, and help docs in Simplified Chinese |
+| 🔌 **Plug & Play** | No special system dependencies — consistent on Linux/Windows/macOS |
 
 ---
 
-## 🔌 MCP Tool Integration
+## 🚀 Quick Start
 
-Supports [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for extending the agent:
+### Requirements
 
-- Configure MCP servers in `opencode.json`
-- Auto-discovery and tool registration
-- Permission-gated execution
+- **Node.js** 18.0.0 or higher (22.x LTS recommended)
+- **npm** 9+ or **pnpm** 8+
+- No Bun! No Docker! No special CPU instructions!
+
+### Installation
+
+```bash
+git clone https://github.com/xusu-ai/opencode-cn-nodejs.git
+cd opencode-cn-nodejs
+npm install
+npx tsx --conditions=node --tsconfig tsconfig.json packages/opencode/src/index.ts serve --port 3000
+```
+
+### Systemd Service (Production)
+
+```ini
+[Unit]
+Description=OpenCode-CN-NodeJS Server
+After=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/path/to/opencode-cn-nodejs/packages/opencode
+ExecStart=/path/to/opencode-cn-nodejs/node_modules/.bin/tsx --conditions=node --tsconfig tsconfig.json ./src/index.ts serve --port 8099 --hostname 0.0.0.0
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
 
 ---
 
-## 📖 Documentation
+## 🏗️ Architecture
 
-For more configuration info, see the [OpenCode docs](https://gitee.com/xusuai/opencode-cn).
+Dual-runtime dispatch via `package.json` `imports`:
 
-## 🤝 Contributing
+```
+#hono  →  adapter.node.ts  (Node.js — default)  ✅
+#db    →  db.node.ts        (Node.js — default)  ✅
+#pty   →  pty.node.ts       (Node.js — default)  ✅
+```
 
-Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before submitting a pull request.
+`tsconfig.json` sets `"customConditions": ["node"]` to always prefer Node.js adapters.
 
-## 📄 License
+### Differences from Upstream
 
-Based on upstream [OpenCode](https://github.com/anomalyco/opencode) (MIT License), customized for the China region.
+| Aspect | Upstream | OpenCode-CN-NodeJS |
+|--------|----------|-------------------|
+| Runtime | Bun (required) | **Node.js + tsx** |
+| Language | English | **100% Chinese** |
+| Server | Bun.serve | **Node HTTP** |
+| Install | curl script | **git clone + npm** |
 
 ---
 
-**Community** [Discord](https://discord.gg/opencode) | [X.com](https://x.com/opencode) | [Gitee](https://gitee.com/xusuai/opencode-cn)
+## 🔧 Old Hardware Compatibility
+
+Works on any machine with Node.js 18+:
+- Intel Core 2 Duo / pre-4th-gen ✅
+- AMD Phenom / Bulldozer ✅
+- 1C1G cloud VPS / Raspberry Pi ✅
+- OpenVZ / LXC containers ✅
+
+No AVX/AVX2 required — no native addon dependency chains.
+
+---
+
+## 📜 License
+
+Same as upstream OpenCode. See [LICENSE](LICENSE).
+
+---
+
+<p align="center">
+  <a href="https://github.com/xusu-ai/opencode-cn-nodejs">GitHub Repository</a>
+</p>
