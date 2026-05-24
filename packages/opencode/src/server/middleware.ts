@@ -18,12 +18,12 @@ export const ErrorMiddleware: ErrorHandler = (err, c) => {
     error: err,
   })
   if (err instanceof NamedError) {
-    let status: ContentfulStatusCode
-    if (err instanceof NotFoundError) status = 404
-    else if (err instanceof Provider.ModelNotFoundError) status = 400
-    else if (err.name === "ProviderAuthValidationFailed") status = 400
-    else if (err.name.startsWith("Worktree")) status = 400
-    else status = 500
+    const status: ContentfulStatusCode =
+      err instanceof NotFoundError ? 404
+      : err instanceof Provider.ModelNotFoundError ? 400
+      : err.name === "ProviderAuthValidationFailed" ? 400
+      : err.name.startsWith("Worktree") ? 400
+      : 500
     return c.json(err.toObject(), { status })
   }
   if (err instanceof Session.BusyError) {

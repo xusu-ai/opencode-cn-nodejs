@@ -1,5 +1,5 @@
 import { LocalContext } from "../util"
-import type { WorkspaceID } from "../control-plane/schema"
+import type { WorkspaceID } from "./schema"
 
 export interface WorkspaceContext {
   workspaceID: WorkspaceID | undefined

@@ -11,7 +11,6 @@ import { Hash } from "@opencode-ai/shared/util/hash"
 
 // Try to import bundled snapshot (generated at build time)
 // Falls back to undefined in dev mode when snapshot doesn't exist
-/* @ts-ignore */
 
 const log = Log.create({ service: "models.dev" })
 const source = url()
@@ -130,7 +129,7 @@ const fetchApi = async () => {
 export const Data = lazy(async () => {
   const result = await Filesystem.readJson(Flag.OPENCODE_MODELS_PATH ?? filepath).catch(() => {})
   if (result) return result
-  // @ts-ignore
+  // @ts-expect-error — snapshot may not exist in dev
   const snapshot = await import("./models-snapshot.js")
     .then((m) => m.snapshot as Record<string, unknown>)
     .catch(() => undefined)
@@ -145,7 +144,11 @@ export const Data = lazy(async () => {
         log.error("Failed to write models cache", { error: e })
       })
     }
-    return JSON.parse(result2.text)
+    try {
+      return JSON.parse(result2.text)
+    } catch {
+      throw new Error("Failed to parse models API response")
+    }
   })
 })
 

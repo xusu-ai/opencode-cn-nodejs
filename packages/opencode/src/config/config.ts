@@ -48,7 +48,7 @@ const log = Log.create({ service: "config" })
 
 // Custom merge function that concatenates array fields instead of replacing them
 function mergeConfigConcatArrays(target: Info, source: Info): Info {
-  const merged = mergeDeep(target, source)
+  const merged = mergeDeep(target, source) as Info
   if (target.instructions && source.instructions) {
     merged.instructions = Array.from(new Set([...target.instructions, ...source.instructions]))
   }
@@ -453,7 +453,6 @@ export const layer = Layer.effect(
 
         let result: Info = {}
         const consoleManagedProviders = new Set<string>()
-        let activeOrgName: string | undefined
 
         const pluginScopeForSource = Effect.fnUntraced(function* (source: string) {
           if (source.startsWith("http://") || source.startsWith("https://")) return "global"
@@ -661,7 +660,11 @@ export const layer = Layer.effect(
         }
 
         if (Flag.OPENCODE_PERMISSION) {
-          result.permission = mergeDeep(result.permission ?? {}, JSON.parse(Flag.OPENCODE_PERMISSION))
+          try {
+            result.permission = mergeDeep(result.permission ?? {}, JSON.parse(Flag.OPENCODE_PERMISSION))
+          } catch (err) {
+            log.error("invalid OPENCODE_PERMISSION flag, ignoring", { error: String(err) })
+          }
         }
 
         if (result.tools) {
@@ -696,7 +699,6 @@ export const layer = Layer.effect(
           deps,
           consoleState: {
             consoleManagedProviders: Array.from(consoleManagedProviders),
-            activeOrgName,
             switchableOrgCount: 0,
           },
         }

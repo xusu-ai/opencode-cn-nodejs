@@ -24,7 +24,9 @@ render(() => {
     return Math.max(25, Math.min(100, percent()))
   })
 
-  window.api.awaitInitialization((next) => setStep(next as InitStep)).catch(() => undefined)
+  window.api.awaitInitialization((next) => setStep(next as InitStep)).catch((err) => {
+    console.error("initialization listener failed:", err)
+  })
 
   onMount(() => {
     setLine(0)

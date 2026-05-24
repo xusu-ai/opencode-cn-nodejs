@@ -3,7 +3,20 @@ import { Effect } from "effect"
 import { HttpClient, HttpClientRequest } from "effect/unstable/http"
 import * as Tool from "./tool"
 import TurndownService from "turndown"
-import DESCRIPTION from "./webfetch.txt"
+const DESCRIPTION = `- Fetches content from a specified URL
+- Takes a URL and optional format as input
+- Fetches the URL content, converts to requested format (markdown by default)
+- Returns the content in the specified format
+- Use this tool when you need to retrieve and analyze web content
+
+Usage notes:
+  - IMPORTANT: if another tool is present that offers better web fetching capabilities, is more targeted to the task, or has fewer restrictions, prefer using that tool instead of this one.
+  - The URL must be a fully-formed valid URL
+  - HTTP URLs will be automatically upgraded to HTTPS
+  - Format options: "markdown" (default), "text", or "html"
+  - This tool is read-only and does not modify any files
+  - Results may be summarized if the content is very large
+`
 import { isImageAttachment } from "@/util/media"
 
 const MAX_RESPONSE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -23,6 +36,7 @@ const PRIVATE_HOST_PATTERNS = [
   /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,      // Carrier-grade NAT (RFC6598)
   /^198\.1[8-9]\./,                                  // Benchmarking (RFC2544)
   /^\[?::1\]?$/,                                     // Loopback IPv6
+  /^\[?::ffff:(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.)/i, // IPv6-mapped IPv4 private
   /^\[?fe80:/i,                                      // Link-local IPv6
   /^\[?fc00:/i,                                      // Unique local IPv6
   /^\[?fd/i,                                         // Unique local IPv6

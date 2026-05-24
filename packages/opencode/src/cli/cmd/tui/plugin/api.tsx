@@ -333,9 +333,9 @@ export function createTuiApi(input: Input): TuiPluginApi {
     },
     state: stateApi(input.sync),
     get client() {
-      return input.sdk.client
+      return input.sdk.client as any
     },
-    event: input.event,
+    event: input.event as any,
     renderer: input.renderer,
     slots: {
       register() {

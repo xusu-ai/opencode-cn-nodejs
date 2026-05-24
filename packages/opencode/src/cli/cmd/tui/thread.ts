@@ -63,8 +63,8 @@ async function target() {
   return new URL("./worker.ts", import.meta.url)
 }
 
-async function input(value?: string) {
-  const piped = process.stdin.isTTY ? undefined : await Bun.stdin.text()
+async function input(value?: string): Promise<string | undefined> {
+  const piped = process.stdin.isTTY ? undefined : await new Promise<string>(r => { let d=""; process.stdin.on("data",x=>d+=x); process.stdin.on("end",()=>r(d)); })
   if (!value) return piped
   if (!piped) return value
   return piped + "\n" + value
@@ -204,7 +204,7 @@ export const TuiThreadCommand = cmd({
         worker.terminate()
       }
 
-      const prompt = await input(args.prompt)
+      const prompt = (await input(args.prompt)) ?? ""
       const config = await TuiConfig.get()
 
       const network = resolveNetworkOptionsNoConfig(args)

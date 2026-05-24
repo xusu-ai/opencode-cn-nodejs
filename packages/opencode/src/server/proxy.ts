@@ -49,11 +49,11 @@ function socket(url: string | URL) {
   return next.toString()
 }
 
-function send(ws: { send(data: string | ArrayBuffer | Uint8Array): void }, data: any) {
+function send(ws: { send(data: string | ArrayBuffer | Uint8Array): void }, data: unknown) {
   if (data instanceof Blob) {
     return data.arrayBuffer().then((x) => ws.send(x))
   }
-  return ws.send(data)
+  return ws.send(data as string | ArrayBuffer | Uint8Array)
 }
 
 const app = (upgrade: UpgradeWebSocket) =>
@@ -67,6 +67,12 @@ const app = (upgrade: UpgradeWebSocket) =>
         onOpen(_, ws) {
           if (!url) {
             ws.close(1011, "missing proxy target")
+            return
+          }
+          let parsed: URL
+          try { parsed = new URL(url) } catch { ws.close(1011, "invalid proxy target"); return }
+          if (parsed.protocol !== "ws:" && parsed.protocol !== "wss:") {
+            ws.close(1011, "invalid proxy target protocol")
             return
           }
           remote = new WebSocket(url, protocols(c.req.raw))

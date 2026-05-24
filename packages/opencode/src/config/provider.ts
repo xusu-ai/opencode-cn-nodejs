@@ -1,3 +1,4 @@
+export * as ConfigProvider from "./provider"
 import { Schema } from "effect"
 import { zod } from "@/util/effect-zod"
 import { withStatics } from "@/util/schema"
@@ -90,10 +91,7 @@ export const Info = Schema.Struct({
           description: "Enable promptCacheKey for this provider (default false)",
         }),
         timeout: Schema.optional(
-          Schema.Union([PositiveInt, Schema.Literal(false)]).annotate({
-            description:
-              "Timeout in milliseconds for requests to this provider. Default is 300000 (5 minutes). Set to false to disable timeout.",
-          }),
+          Schema.Union([PositiveInt, Schema.Literal(false)]),
         ).annotate({
           description:
             "Timeout in milliseconds for requests to this provider. Default is 300000 (5 minutes). Set to false to disable timeout.",
@@ -111,5 +109,3 @@ export const Info = Schema.Struct({
   .annotate({ identifier: "ProviderConfig" })
   .pipe(withStatics((s) => ({ zod: zod(s) })))
 export type Info = Schema.Schema.Type<typeof Info>
-
-export * as ConfigProvider from "./provider"

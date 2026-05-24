@@ -871,7 +871,7 @@ export class OpenAIResponsesLanguageModel implements LanguageModelV3 {
                 unified: "error",
                 raw: undefined,
               }
-              controller.enqueue({ type: "error", error: chunk.error })
+              controller.enqueue({ type: "error", error: (chunk as any).error })
               return
             }
 

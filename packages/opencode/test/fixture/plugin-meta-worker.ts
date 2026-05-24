@@ -1,3 +1,4 @@
+export {}
 const raw = process.argv[2]
 if (!raw) throw new Error("Missing worker payload")
 

@@ -340,13 +340,13 @@ export async function handler(
       statusText: res.statusText,
       headers: resHeaders,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
     logger.metric({
-      "error.type": error.constructor.name,
-      "error.message": error.message,
-      "error.cause": error.cause?.toString(),
+      "error.type": error instanceof Error ? error.constructor.name : "Unknown",
+      "error.message": message,
     })
-    if (error.message.startsWith("Failed query")) {
+    if (message.startsWith("Failed query") && error instanceof Error) {
       try {
         logger.metric({
           "error.cause2": JSON.stringify(error.cause),
@@ -393,7 +393,7 @@ export async function handler(
         type: "error",
         error: {
           type: "error",
-          message: error.message,
+          message: "Internal server error",
         },
       }),
       { status: 500 },
@@ -612,7 +612,7 @@ export async function handler(
       throw new AuthError(t("zen.api.error.modelNotSupported", { model: modelInfo.id }))
 
     logger.metric({
-      api_key: data.apiKey,
+      api_key: data.apiKey.slice(0, 8) + "...",
       workspace: data.workspaceID,
       ...(() => {
         if (data.billing.subscription)

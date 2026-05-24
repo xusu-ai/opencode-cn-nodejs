@@ -396,7 +396,7 @@ export class OpenAICompatibleChatLanguageModel implements LanguageModelV3 {
                 unified: "error",
                 raw: undefined,
               }
-              controller.enqueue({ type: "error", error: chunk.error })
+              controller.enqueue({ type: "error", error: (chunk as any).error })
               return
             }
             const value = chunk.value

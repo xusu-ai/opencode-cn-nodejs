@@ -86,7 +86,7 @@ export const ProjectRoutes = lazy(() =>
           directory: dir,
           worktree: dir,
           project: next,
-          init: () => AppRuntime.runPromise(InstanceBootstrap),
+          init: () => AppRuntime.runPromise(InstanceBootstrap as never),
         })
         return c.json(next)
       },

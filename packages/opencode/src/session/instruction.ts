@@ -227,7 +227,7 @@ export const layer: Layer.Layer<Service, never, AppFileSystem.Service | Config.S
         return results
       })
 
-      return Service.of({ clear, systemPaths, system, find, resolve })
+      return Service.of({ clear, systemPaths, system: system as Interface["system"], find, resolve })
     }),
   )
 

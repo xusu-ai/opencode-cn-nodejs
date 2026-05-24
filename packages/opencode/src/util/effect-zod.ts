@@ -248,7 +248,7 @@ type DecodeLink = {
 }
 
 function extractDefault(ast: SchemaAST.AST): { value: unknown } | undefined {
-  const encoding = (ast as { encoding?: ReadonlyArray<DecodeLink> }).encoding
+  const encoding = (ast as unknown as { encoding?: ReadonlyArray<DecodeLink> }).encoding
   if (!encoding?.length) return undefined
   // Walk the chain of encoding Links in order; the first Getter that produces
   // a value from Option.none wins.  withDecodingDefault always puts its

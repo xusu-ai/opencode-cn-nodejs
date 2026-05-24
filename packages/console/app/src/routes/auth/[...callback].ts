@@ -34,11 +34,12 @@ export async function GET(input: APIEvent) {
     })
     const next = url.pathname === "/auth/callback" ? "/auth" : url.pathname.replace("/auth/callback", "")
     return redirect(route(locale, next))
-  } catch (e: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[auth] OAuth callback error:", message)
     return new Response(
       JSON.stringify({
-        error: e.message,
-        cause: Object.fromEntries(url.searchParams.entries()),
+        error: "Authentication failed. Please try again.",
       }),
       { status: 500 },
     )

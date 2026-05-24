@@ -57,23 +57,18 @@ function isEnoent(e: unknown): e is { code: "ENOENT" } {
 }
 
 export async function write(p: string, content: string | Buffer | Uint8Array, mode?: number): Promise<void> {
-  try {
-    if (mode) {
-      await writeFile(p, content, { mode })
-    } else {
-      await writeFile(p, content)
-    }
-  } catch (e) {
-    if (isEnoent(e)) {
-      await mkdir(dirname(p), { recursive: true })
+  for (let attempt = 0; ; attempt++) {
+    try {
       if (mode) {
         await writeFile(p, content, { mode })
       } else {
         await writeFile(p, content)
       }
       return
+    } catch (e) {
+      if (!isEnoent(e) || attempt > 0) throw e
+      await mkdir(dirname(p), { recursive: true })
     }
-    throw e
   }
 }
 

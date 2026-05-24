@@ -88,7 +88,7 @@ export function WorkspaceRouterMiddleware(upgrade: UpgradeWebSocket): Middleware
         fn: () =>
           Instance.provide({
             directory: target.directory,
-            init: () => AppRuntime.runPromise(InstanceBootstrap),
+            init: () => AppRuntime.runPromise(InstanceBootstrap as never),
             async fn() {
               return next()
             },

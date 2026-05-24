@@ -71,3 +71,5 @@ export const create = (base: Fields = {}): Handle => ({
   error: (msg, extra) => call((item) => Effect.logError(item), base, msg, extra),
   with: (extra) => create({ ...base, ...extra }),
 })
+
+export * as EffectLogger from "./logger"

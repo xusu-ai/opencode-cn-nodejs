@@ -136,16 +136,24 @@ export function registerIpcHandlers(deps: Deps) {
   )
 
   ipcMain.on("open-link", (_event: IpcMainEvent, url: string) => {
+    let parsed: URL
+    try { parsed = new URL(url) } catch { return }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return
     void shell.openExternal(url)
   })
 
   ipcMain.handle("open-path", async (_event: IpcMainInvokeEvent, path: string, app?: string) => {
     if (!app) return shell.openPath(path)
-    await new Promise<void>((resolve, reject) => {
-      const [cmd, args] =
-        process.platform === "darwin" ? (["open", ["-a", app, path]] as const) : ([app, [path]] as const)
-      execFile(cmd, args, (err) => (err ? reject(err) : resolve()))
-    })
+    if (process.platform === "darwin") {
+      await new Promise<void>((resolve, reject) => {
+        execFile("open", ["-a", app, path], (err) => (err ? reject(err) : resolve()))
+      })
+    } else {
+      if (!app.startsWith("/") || app.includes("..")) throw new Error("Invalid app path")
+      await new Promise<void>((resolve, reject) => {
+        execFile(app, [path], (err) => (err ? reject(err) : resolve()))
+      })
+    }
   })
 
   ipcMain.handle("read-clipboard-image", () => {

@@ -181,8 +181,9 @@ function fetchFromClient<T extends { name: string }>(
 ) {
   return Effect.tryPromise({
     try: () => listFn(client),
-    catch: (e: any) => {
-      log.error(`failed to get ${label}`, { clientName, error: e.message })
+    catch: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e)
+      log.error(`failed to get ${label}`, { clientName, error: msg })
       return e
     },
   }).pipe(
@@ -675,7 +676,7 @@ export const layer = Layer.effect(
         ([clientName, client]) =>
           fetchFromClient(clientName, client, listFn, label).pipe(Effect.map((items) => Object.entries(items ?? {}))),
         { concurrency: "unbounded" },
-      ).pipe(Effect.map((results) => Object.fromEntries<T & { client: string }>(results.flat())))
+      ).pipe(Effect.map((results) => Object.fromEntries(results.flat()) as Record<string, T & { client: string }>))
     }
 
     const prompts = Effect.fn("MCP.prompts")(function* () {
@@ -702,8 +703,9 @@ export const layer = Layer.effect(
       }
       return yield* Effect.tryPromise({
         try: () => fn(client),
-        catch: (e: any) => {
-          log.error(`failed to ${label}`, { clientName, ...meta, error: e?.message })
+        catch: (e: unknown) => {
+          const msg = e instanceof Error ? e.message : String(e)
+          log.error(`failed to ${label}`, { clientName, ...meta, error: msg })
           return e
         },
       }).pipe(Effect.orElseSucceed(() => undefined))

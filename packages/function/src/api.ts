@@ -6,6 +6,13 @@ import { createAppAuth } from "@octokit/auth-app"
 import { Octokit } from "@octokit/rest"
 import { Resource } from "sst"
 
+function timingSafeEqualStr(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let result = 0
+  for (let i = 0; i < a.length; i++) result |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return result === 0
+}
+
 type Env = {
   SYNC_SERVER: DurableObjectNamespace<SyncServer>
   Bucket: R2Bucket
@@ -42,7 +49,7 @@ export class SyncServer extends DurableObject<Env> {
     ws.close(code, "Durable Object is closing WebSocket")
   }
 
-  async publish(key: string, content: any) {
+  async publish(key: string, content: Record<string, unknown>) {
     const sessionID = await this.getSessionID()
     if (
       !key.startsWith(`session/info/${sessionID}`) &&
@@ -77,14 +84,22 @@ export class SyncServer extends DurableObject<Env> {
   }
 
   public async getData() {
-    const data = (await this.ctx.storage.list()) as Map<string, any>
+    const data = (await this.ctx.storage.list()) as Map<string, Record<string, unknown>>
     return Array.from(data.entries())
       .filter(([key, _]) => key.startsWith("session/"))
       .map(([key, content]) => ({ key, content }))
   }
 
-  public async assertSecret(secret: string) {
-    if (secret !== (await this.getSecret())) throw new Error("Invalid secret")
+public async assertSecret(secret: string) {
+    const stored = await this.getSecret()
+    if (!stored || !timingSafeEqualStr(secret, stored)) throw new Error("Invalid secret")
+  }
+
+  private timingSafeEqual(a: string, b: string): boolean {
+    if (a.length !== b.length) return false
+    let result = 0
+    for (let i = 0; i < a.length; i++) result |= a.charCodeAt(i) ^ b.charCodeAt(i)
+    return result === 0
   }
 
   private async getSecret() {
@@ -116,7 +131,8 @@ export class SyncServer extends DurableObject<Env> {
 export default new Hono<{ Bindings: Env }>()
   .get("/", (c) => c.text("Hello, world!"))
   .post("/share_create", async (c) => {
-    const body = await c.req.json<{ sessionID: string }>()
+    let body: { sessionID: string }
+    try { body = await c.req.json() } catch { return c.json({ error: "Invalid JSON body" }, { status: 400 }) }
     const sessionID = body.sessionID
     const short = SyncServer.shortName(sessionID)
     const id = c.env.SYNC_SERVER.idFromName(short)
@@ -128,7 +144,8 @@ export default new Hono<{ Bindings: Env }>()
     })
   })
   .post("/share_delete", async (c) => {
-    const body = await c.req.json<{ sessionID: string; secret: string }>()
+    let body: { sessionID: string; secret: string }
+    try { body = await c.req.json() } catch { return c.json({ error: "Invalid JSON body" }, { status: 400 }) }
     const sessionID = body.sessionID
     const secret = body.secret
     const id = c.env.SYNC_SERVER.idFromName(SyncServer.shortName(sessionID))
@@ -138,22 +155,19 @@ export default new Hono<{ Bindings: Env }>()
     return c.json({})
   })
   .post("/share_delete_admin", async (c) => {
-    const body = await c.req.json<{ sessionShortName: string; adminSecret: string }>()
+    let body: { sessionShortName: string; adminSecret: string }
+    try { body = await c.req.json() } catch { return c.json({ error: "Invalid JSON body" }, { status: 400 }) }
     const sessionShortName = body.sessionShortName
     const adminSecret = body.adminSecret
-    if (adminSecret !== Resource.ADMIN_SECRET.value) throw new Error("Invalid admin secret")
+    if (!adminSecret || !timingSafeEqualStr(adminSecret, Resource.ADMIN_SECRET.value)) throw new Error("Invalid admin secret")
     const id = c.env.SYNC_SERVER.idFromName(sessionShortName)
     const stub = c.env.SYNC_SERVER.get(id)
     await stub.clear()
     return c.json({})
   })
   .post("/share_sync", async (c) => {
-    const body = await c.req.json<{
-      sessionID: string
-      secret: string
-      key: string
-      content: any
-    }>()
+    let body: { sessionID: string; secret: string; key: string; content: Record<string, unknown> }
+    try { body = await c.req.json() } catch { return c.json({ error: "Invalid JSON body" }, { status: 400 }) }
     const name = SyncServer.shortName(body.sessionID)
     const id = c.env.SYNC_SERVER.idFromName(name)
     const stub = c.env.SYNC_SERVER.get(id)
@@ -195,36 +209,25 @@ export default new Hono<{ Bindings: Env }>()
         }
       }
       if (type === "part") {
-        messages[d.content.messageID].parts.push(d.content)
+        const msg = messages[d.content.messageID]
+        if (msg) msg.parts.push(d.content)
       }
     })
 
     return c.json({ info, messages })
   })
   .post("/feishu", async (c) => {
-    const body = (await c.req.json()) as {
-      challenge?: string
-      event?: {
-        message?: {
-          message_id?: string
-          root_id?: string
-          parent_id?: string
-          chat_id?: string
-          content?: string
-        }
-      }
-    }
+    let body: { challenge?: string; event?: { message?: { message_id?: string; root_id?: string; parent_id?: string; chat_id?: string; content?: string } } }
+    try { body = await c.req.json() } catch { return c.json({ error: "Invalid JSON body" }, { status: 400 }) }
     console.log(JSON.stringify(body, null, 2))
     const challenge = body.challenge
     if (challenge) return c.json({ challenge })
 
     const content = body.event?.message?.content
-    const parsed =
-      typeof content === "string" && content.trim().startsWith("{")
-        ? (JSON.parse(content) as {
-            text?: string
-          })
-        : undefined
+    let parsed: { text?: string } | undefined
+    if (typeof content === "string" && content.trim().startsWith("{")) {
+      try { parsed = JSON.parse(content) } catch { parsed = undefined }
+    }
     const text = typeof parsed?.text === "string" ? parsed.text : typeof content === "string" ? content : ""
 
     let message = text.trim().replace(/^@_user_\d+\s*/, "")
@@ -347,12 +350,8 @@ export default new Hono<{ Bindings: Env }>()
       })
 
       return c.json({ token: installationAuth.token })
-    } catch (e: any) {
-      let error = e
-      if (e instanceof Error) {
-        error = e.message
-      }
-
+    } catch (e: unknown) {
+      const error = e instanceof Error ? e.message : String(e)
       return c.json({ error }, { status: 401 })
     }
   })

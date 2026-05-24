@@ -131,7 +131,7 @@ export const layer = Layer.effect(
         })
         const cfg = yield* config.get()
         const input: PluginInput = {
-          client,
+          client: client as any,
           project: ctx.project,
           worktree: ctx.worktree,
           directory: ctx.directory,
@@ -143,8 +143,7 @@ export const layer = Layer.effect(
           get serverUrl(): URL {
             return Server.url ?? new URL("http://localhost:4096")
           },
-          // @ts-expect-error
-          $: typeof Bun === "undefined" ? undefined : Bun.$,
+          $: undefined as never /* Bun.$ not available on Node */,
         }
 
         for (const plugin of INTERNAL_PLUGINS) {

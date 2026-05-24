@@ -90,7 +90,7 @@ type BundledSDK = {
   languageModel(modelId: string): LanguageModelV3
 }
 
-const BUNDLED_PROVIDERS: Record<string, () => Promise<(opts: any) => BundledSDK>> = {
+const BUNDLED_PROVIDERS: Record<string, () => Promise<(opts: Record<string, unknown>) => BundledSDK>> = {
   "@ai-sdk/amazon-bedrock": () => import("@ai-sdk/amazon-bedrock").then((m) => m.createAmazonBedrock),
   "@ai-sdk/anthropic": () => import("@ai-sdk/anthropic").then((m) => m.createAnthropic),
   "@ai-sdk/azure": () => import("@ai-sdk/azure").then((m) => m.createAzure),
@@ -99,7 +99,7 @@ const BUNDLED_PROVIDERS: Record<string, () => Promise<(opts: any) => BundledSDK>
   "@ai-sdk/google-vertex/anthropic": () =>
     import("@ai-sdk/google-vertex/anthropic").then((m) => m.createVertexAnthropic),
   "@ai-sdk/openai": () => import("@ai-sdk/openai").then((m) => m.createOpenAI),
-  "@ai-sdk/openai-compatible": () => import("@ai-sdk/openai-compatible").then((m) => m.createOpenAICompatible),
+  "@ai-sdk/openai-compatible": () => import("@ai-sdk/openai-compatible").then((m) => m.createOpenAICompatible as any),
   "@openrouter/ai-sdk-provider": () => import("@openrouter/ai-sdk-provider").then((m) => m.createOpenRouter),
   "@ai-sdk/xai": () => import("@ai-sdk/xai").then((m) => m.createXai),
   "@ai-sdk/mistral": () => import("@ai-sdk/mistral").then((m) => m.createMistral),
@@ -163,7 +163,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
 
       if (!ok) {
         for (const [key, value] of Object.entries(input.models)) {
-          if (value.cost.input === 0) continue
+          if (value.cost?.input === 0) continue
           delete input.models[key]
         }
       }
@@ -210,11 +210,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         async getModel(sdk: any, modelID: string, options?: Record<string, any>) {
           if (useLanguageModel(sdk)) return sdk.languageModel(modelID)
-          if (options?.["useCompletionUrls"]) {
-            return sdk.chat(modelID)
-          } else {
-            return sdk.responses(modelID)
-          }
+          if (options?.["useCompletionUrls"]) return sdk.chat(modelID)
+          return sdk.responses(modelID)
         },
         options: {},
         vars(_options) {
@@ -230,11 +227,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         async getModel(sdk: any, modelID: string, options?: Record<string, any>) {
           if (useLanguageModel(sdk)) return sdk.languageModel(modelID)
-          if (options?.["useCompletionUrls"]) {
-            return sdk.chat(modelID)
-          } else {
-            return sdk.responses(modelID)
-          }
+          if (options?.["useCompletionUrls"]) return sdk.chat(modelID)
+          return sdk.responses(modelID)
         },
         options: {
           baseURL: resourceName ? `https://${resourceName}.cognitiveservices.azure.com/openai` : undefined,
@@ -920,7 +914,10 @@ export const ConfigProvidersResult = Schema.Struct({
 export type ConfigProvidersResult = Types.DeepMutable<Schema.Schema.Type<typeof ConfigProvidersResult>>
 
 export function defaultModelIDs<T extends { models: Record<string, { id: string }> }>(providers: Record<string, T>) {
-  return mapValues(providers, (item) => sort(Object.values(item.models))[0].id)
+  return mapValues(providers, (item) => {
+    const values = sort(Object.values(item.models))
+    return values.length > 0 ? values[0].id : ""
+  })
 }
 
 export interface Interface {
@@ -1098,14 +1095,12 @@ const layer: Layer.Layer<
         function mergeProvider(providerID: ProviderID, provider: Partial<Info>) {
           const existing = providers[providerID]
           if (existing) {
-            // @ts-expect-error
-            providers[providerID] = mergeDeep(existing, provider)
+            providers[providerID] = mergeDeep(existing, provider) as Info
             return
           }
           const match = database[providerID]
           if (!match) return
-          // @ts-expect-error
-          providers[providerID] = mergeDeep(match, provider)
+          providers[providerID] = mergeDeep(match, provider) as Info
         }
 
         // load plugins first so config() hook runs before reading cfg.provider
@@ -1199,7 +1194,7 @@ const layer: Layer.Layer<
               release_date: model.release_date ?? existingModel?.release_date ?? "",
               variants: {},
             }
-            const merged = mergeDeep(ProviderTransform.variants(parsedModel), model.variants ?? {})
+            const merged = mergeDeep(ProviderTransform.variants(parsedModel), model.variants ?? {}) as Record<string, { disabled?: boolean }>
             parsedModel.variants = mapValues(
               pickBy(merged, (v) => !v.disabled),
               (v) => omit(v, ["disabled"]),
@@ -1356,7 +1351,7 @@ const layer: Layer.Layer<
 
             const configVariants = configProvider?.models?.[modelID]?.variants
             if (configVariants && model.variants) {
-              const merged = mergeDeep(model.variants, configVariants)
+              const merged = mergeDeep(model.variants, configVariants) as Record<string, { disabled?: boolean }>
               model.variants = mapValues(
                 pickBy(merged, (v) => !v.disabled),
                 (v) => omit(v, ["disabled"]),
@@ -1474,7 +1469,6 @@ const layer: Layer.Layer<
 
           const res = await fetchFn(input, {
             ...opts,
-            // @ts-ignore see here: https://github.com/oven-sh/bun/issues/16682
             timeout: false,
           })
 
@@ -1696,10 +1690,16 @@ export const defaultLayer = Layer.suspend(() =>
 )
 
 const priority = ["gpt-5", "claude-sonnet-4", "big-pickle", "gemini-3-pro"]
+const priorityLookup = new Map(priority.map((p, i) => [p, i]))
 export function sort<T extends { id: string }>(models: T[]) {
   return sortBy(
     models,
-    [(model) => priority.findIndex((filter) => model.id.includes(filter)), "desc"],
+    [(model) => {
+      for (const [p, idx] of priorityLookup) {
+        if (model.id.includes(p)) return idx
+      }
+      return -1
+    }, "desc"],
     [(model) => (model.id.includes("latest") ? 0 : 1), "asc"],
     [(model) => model.id, "desc"],
   )

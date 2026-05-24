@@ -71,9 +71,9 @@ const createPlatform = (): Platform => {
   const handleWslPicker = async <T extends string | string[]>(result: T | null): Promise<T | null> => {
     if (!result || !(await isWslEnabled())) return result
     if (Array.isArray(result)) {
-      return Promise.all(result.map((path) => window.api.wslPath(path, "linux").catch(() => path))) as any
+      return Promise.all(result.map((path) => window.api.wslPath(path, "linux").catch((err) => { console.warn("[wsl] path conversion failed:", err); return path }))) as T
     }
-    return window.api.wslPath(result, "linux").catch(() => result) as any
+    return window.api.wslPath(result, "linux").catch((err) => { console.warn("[wsl] path conversion failed:", err); return result }) as T
   }
 
   const storage = (() => {
@@ -141,7 +141,7 @@ const createPlatform = (): Platform => {
     },
     async openPath(path: string, app?: string) {
       if (os === "windows") {
-        const resolvedApp = app ? await window.api.resolveAppPath(app).catch(() => null) : null
+        const resolvedApp = app ? await window.api.resolveAppPath(app).catch((err) => { console.warn("[app] resolve app path failed:", err); return null }) : null
         const resolvedPath = await (async () => {
           if (await isWslEnabled()) {
             const converted = await window.api.wslPath(path, "windows").catch(() => null)
@@ -165,24 +165,24 @@ const createPlatform = (): Platform => {
     storage,
 
     checkUpdate: async () => {
-      const config = await window.api.getWindowConfig().catch(() => ({ updaterEnabled: false }))
+      const config = await window.api.getWindowConfig().catch((err) => { console.warn("[updater] get config failed:", err); return { updaterEnabled: false } })
       if (!config.updaterEnabled) return { updateAvailable: false }
       return window.api.checkUpdate()
     },
 
     update: async () => {
-      const config = await window.api.getWindowConfig().catch(() => ({ updaterEnabled: false }))
+      const config = await window.api.getWindowConfig().catch((err) => { console.warn("[updater] get config failed:", err); return { updaterEnabled: false } })
       if (!config.updaterEnabled) return
       await window.api.installUpdate()
     },
 
     restart: async () => {
-      await window.api.killSidecar().catch(() => undefined)
+      await window.api.killSidecar().catch((err) => { console.warn("[restart] kill sidecar failed:", err) })
       window.api.relaunch()
     },
 
     notify: async (title, description, href) => {
-      const focused = await window.api.getWindowFocused().catch(() => document.hasFocus())
+      const focused = await window.api.getWindowFocused().catch((err) => { console.warn("[notify] get focus failed:", err); return document.hasFocus() })
       if (focused) return
 
       const notification = new Notification(title, {
@@ -209,7 +209,7 @@ const createPlatform = (): Platform => {
     },
 
     getDefaultServer: async () => {
-      const url = await window.api.getDefaultServerUrl().catch(() => null)
+      const url = await window.api.getDefaultServerUrl().catch((err) => { console.warn("[server] get default URL failed:", err); return null })
       if (!url) return null
       return ServerConnection.Key.make(url)
     },
@@ -219,7 +219,7 @@ const createPlatform = (): Platform => {
     },
 
     getDisplayBackend: async () => {
-      return window.api.getDisplayBackend().catch(() => null)
+      return window.api.getDisplayBackend().catch((err) => { console.warn("[display] get backend failed:", err); return null })
     },
 
     setDisplayBackend: async (backend) => {
@@ -235,7 +235,7 @@ const createPlatform = (): Platform => {
     },
 
     async readClipboardImage() {
-      const image = await window.api.readClipboardImage().catch(() => null)
+      const image = await window.api.readClipboardImage().catch((err) => { console.warn("[clipboard] read image failed:", err); return null })
       if (!image) return null
       const blob = new Blob([image.buffer], { type: "image/png" })
       return new File([blob], `pasted-image-${Date.now()}.png`, {
@@ -245,7 +245,7 @@ const createPlatform = (): Platform => {
   }
 }
 
-let menuTrigger = null as null | ((id: string) => void)
+let menuTrigger: ((id: string) => void) | null = null
 window.api.onMenuCommand((id) => {
   menuTrigger?.(id)
 })
@@ -253,7 +253,7 @@ listenForDeepLinks()
 
 render(() => {
   const platform = createPlatform()
-  const [windowConfig] = createResource(() => window.api.getWindowConfig().catch(() => ({ updaterEnabled: false })))
+  const [windowConfig] = createResource(() => window.api.getWindowConfig().catch((err) => { console.warn("[config] get window config failed:", err); return { updaterEnabled: false } }))
   const loadLocale = async () => {
     const current = await platform.storage?.("opencode.global.dat").getItem("language")
     const legacy = current ? undefined : await platform.storage?.().getItem("language.v1")

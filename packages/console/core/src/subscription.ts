@@ -40,7 +40,8 @@ export namespace Subscription {
   })
 
   export const getLimits = fn(z.void(), () => {
-    const json = JSON.parse(Resource.ZEN_LIMITS.value)
+    let json: unknown
+    try { json = JSON.parse(Resource.ZEN_LIMITS.value) } catch { throw new Error("Invalid ZEN_LIMITS configuration") }
     return LimitsSchema.parse(json)
   })
 

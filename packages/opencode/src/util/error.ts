@@ -57,17 +57,18 @@ export function errorData(error: unknown) {
     }
   }
 
-  const data = Object.getOwnPropertyNames(error).reduce<Record<string, unknown>>((acc, key) => {
-    const value = error[key]
-    if (value === undefined) return acc
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      acc[key] = value
-      return acc
-    }
-    // oxlint-disable-next-line no-base-to-string -- intentional coercion of arbitrary error properties
-    acc[key] = value instanceof Error ? value.message : String(value)
-    return acc
-  }, {})
+  const data = Object.fromEntries(
+    Object.getOwnPropertyNames(error)
+      .filter((key) => error[key] !== undefined)
+      .map((key) => {
+        const value = error[key]
+        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+          return [key, value]
+        }
+        // oxlint-disable-next-line no-base-to-string -- intentional coercion of arbitrary error properties
+        return [key, value instanceof Error ? value.message : String(value)]
+      }),
+  )
 
   if (typeof data.message !== "string") data.message = errorMessage(error)
   if (typeof data.type !== "string") data.type = error.constructor?.name

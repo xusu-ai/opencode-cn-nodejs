@@ -318,7 +318,7 @@ export function deriveNewContentsFromChunks(filePath: string, chunks: UpdateFile
     throw new Error(`Failed to read file ${filePath}: ${error}`, { cause: error })
   }
 
-  let originalLines = originalContent.text.split("\n")
+  const originalLines = originalContent.text.split("\n")
 
   // Drop trailing empty element for consistent line counting
   if (originalLines.length > 0 && originalLines[originalLines.length - 1] === "") {
@@ -326,7 +326,7 @@ export function deriveNewContentsFromChunks(filePath: string, chunks: UpdateFile
   }
 
   const replacements = computeReplacements(originalLines, filePath, chunks)
-  let newLines = applyReplacements(originalLines, replacements)
+  const newLines = applyReplacements(originalLines, replacements)
 
   // Ensure trailing newline
   if (newLines.length === 0 || newLines[newLines.length - 1] !== "") {
@@ -542,7 +542,7 @@ export async function applyHunksToFiles(hunks: Hunk[]): Promise<AffectedPaths> {
         break
 
       case "delete":
-        await fs.unlink(hunk.path)
+        try { await fs.unlink(hunk.path) } catch {}
         deleted.push(hunk.path)
         log.info(`Deleted file: ${hunk.path}`)
         break

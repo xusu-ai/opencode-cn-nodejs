@@ -9,7 +9,7 @@ type PersistedWithReady<T> = [
   Store<T>,
   SetStoreFunction<T>,
   InitType,
-  Accessor<boolean> & { promise: undefined | Promise<any> },
+  Accessor<boolean> & { promise: undefined | Promise<unknown> },
 ]
 
 type PersistTarget = {

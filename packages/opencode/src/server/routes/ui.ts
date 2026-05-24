@@ -4,6 +4,9 @@ import { proxy } from "hono/proxy"
 import { getMimeType } from "hono/utils/mime"
 import { createHash } from "node:crypto"
 import fs from "node:fs/promises"
+import { Log } from "@/util"
+
+const log = Log.create({ service: "server" })
 
 const embeddedUIPromise = Flag.OPENCODE_DISABLE_EMBEDDED_WEB_UI
   ? Promise.resolve(null)
@@ -32,24 +35,38 @@ export const UIRoutes = (): Hono =>
           c.header("Content-Security-Policy", DEFAULT_CSP)
         }
         return c.body(new Uint8Array(await fs.readFile(match)))
-      } else {
-        return c.json({ error: "Not Found" }, 404)
       }
+      return c.json({ error: "Not Found" }, 404)
     } else {
-      const response = await proxy(`https://app.opencode.ai${path}`, {
-        raw: c.req.raw,
-        headers: {
-          ...Object.fromEntries(c.req.raw.headers.entries()),
-          host: "app.opencode.ai",
-        },
-      })
-      const match = response.headers.get("content-type")?.includes("text/html")
-        ? (await response.clone().text()).match(
-            /<script\b(?![^>]*\bsrc\s*=)[^>]*\bid=(['"])oc-theme-preload-script\1[^>]*>([\s\S]*?)<\/script>/i,
-          )
-        : undefined
-      const hash = match ? createHash("sha256").update(match[2]).digest("base64") : ""
-      response.headers.set("Content-Security-Policy", csp(hash))
-      return response
+      try {
+        const response = await proxy(`https://app.opencode.ai${path}`, {
+          raw: c.req.raw,
+          headers: {
+            ...Object.fromEntries(c.req.raw.headers.entries()),
+            host: "app.opencode.ai",
+          },
+        })
+        const match = response.headers.get("content-type")?.includes("text/html")
+          ? (await response.clone().text()).match(
+              /<script\b(?![^>]*\bsrc\s*=)[^>]*\bid=(['"])oc-theme-preload-script\1[^>]*>([\s\S]*?)<\/script>/i,
+            )
+          : undefined
+        const hash = match ? createHash("sha256").update(match[2]).digest("base64") : ""
+        response.headers.set("Content-Security-Policy", csp(hash))
+        return response
+      } catch (err) {
+        log.error("proxy to app.opencode.ai failed", { path, error: err instanceof Error ? err.message : String(err) })
+        const message = err instanceof Error ? err.message : String(err)
+        return c.json(
+          {
+            name: "ProxyError",
+            data: {
+              message: `Cannot load UI from app.opencode.ai: ${message}. The server will retry on next request.`,
+              retry: true,
+            },
+          },
+          { status: 502 },
+        )
+      }
     }
   })

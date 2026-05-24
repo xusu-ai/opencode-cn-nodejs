@@ -1,229 +1,162 @@
 <p align="center">
-  <a href="https://gitee.com/xusuai/opencode-cn">
+  <a href="https://gitee.com/xusuai/opencode-cn-nodejs">
     <picture>
       <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
       <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="OpenCode-CN logo">
+      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="OpenCode-CN-NodeJS logo">
     </picture>
   </a>
 </p>
-<p align="center">开源的 AI Coding Agent · 中国区定制版</p>
+<p align="center">开源的 AI Coding Agent · 纯 Node.js 版 · 老机器福音</p>
 <p align="center">
-  <a href="https://gitee.com/xusuai/opencode-cn/releases"><img alt="Release" src="https://img.shields.io/badge/release-v1.14.21--CN-blue?style=flat-square" /></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-282%20pass-brightgreen?style=flat-square" />
-  <img alt="Security" src="https://img.shields.io/badge/security-132%20tests-blue?style=flat-square" />
-  <img alt="Hardening" src="https://img.shields.io/badge/hardened-8%20rounds-orange?style=flat-square" />
-  <img alt="IME" src="https://img.shields.io/badge/IME-Chinese%20Input%20%E2%9C%93-brightgreen?style=flat-square" />
-  <img alt="i18n" src="https://img.shields.io/badge/i18n-634%2B%20keys-green?style=flat-square" />
+  <a href="https://gitee.com/xusuai/opencode-cn-nodejs/releases"><img alt="Release" src="https://img.shields.io/badge/release-v1.14.21--CN--NodeJS-blue?style=flat-square" /></a>
+  <img alt="Runtime" src="https://img.shields.io/badge/runtime-Node.js%20%7C%20tsx-brightgreen?style=flat-square" />
+  <img alt="Compatibility" src="https://img.shields.io/badge/compat-Node.js%2018%2B-success?style=flat-square" />
+  <img alt="i18n" src="https://img.shields.io/badge/i18n-100%25%20%E4%B8%AD%E6%96%87-brightgreen?style=flat-square" />
+  <img alt="IME" src="https://img.shields.io/badge/IME-%E4%B8%AD%E6%96%87%E8%BE%93%E5%85%A5%E6%94%AF%E6%8C%81-brightgreen?style=flat-square" />
 </p>
 
 <p align="center">
-  <a href="README.md">简体中文</a> |
-  <a href="README.en.md">English</a>
+  <a href="README.md">简体中文</a>
 </p>
-
-[![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://gitee.com/xusuai/opencode-cn)
 
 ---
 
-## 🚀 快速安装
+## 🎯 项目定位
 
-### 二进制发行版（推荐）
+**OpenCode-CN-NodeJS** 是 [OpenCode](https://github.com/opencode-ai/opencode) 的中国区深度定制分支，核心亮点：
 
-从 [Releases](https://gitee.com/xusuai/opencode-cn/releases) 下载对应平台的预编译二进制文件：
+| 特性 | 说明 |
+|------|------|
+| 🟢 **纯 Node.js 运行** | 无需 Bun 运行时，`npm install` + `npx tsx` 即可启动 |
+| 💻 **老机器兼容** | 低内存占用，无 AVX/AVX2 指令集要求，古董 CPU 也能跑 |
+| 🇨🇳 **完全汉化** | 界面 100% 中文，AI 对话/错误提示/状态信息全部中文 |
+| ⌨️ **命令行全中文** | 终端输出、交互提示、帮助文档均使用简体中文 |
+| 🔌 **即装即用** | 无特殊系统依赖，Linux/Windows/macOS 一致体验 |
 
-| 平台 | 架构 | 文件名 | 说明 |
-|------|------|--------|------|
-| Linux | x86_64 | `opencode-linux-x64.tar.gz` | 主流服务器/桌面（需 AVX2） |
-| Linux | x86_64 | `opencode-linux-x64-baseline.tar.gz` | 无 AVX2 的旧 CPU |
-| Linux | ARM64 | `opencode-linux-arm64.tar.gz` | 树莓派/ARM 服务器 |
-| Linux | x86_64 (musl) | `opencode-linux-x64-musl.tar.gz` | Alpine Linux（需 AVX2） |
-| Linux | x86_64 (musl) | `opencode-linux-x64-musl-baseline.tar.gz` | Alpine Linux 无 AVX2 |
-| Linux | ARM64 (musl) | `opencode-linux-arm64-musl.tar.gz` | Alpine ARM |
-| macOS | Apple Silicon | `opencode-darwin-arm64.zip` | M1/M2/M3/M4 |
-| macOS | Intel | `opencode-darwin-x64.zip` | Intel Mac（需 AVX2） |
-| macOS | Intel | `opencode-darwin-x64-baseline.zip` | 旧 Intel Mac |
-| Windows | ARM64 | `opencode-windows-arm64.zip` | ARM Windows |
-| Windows | x86_64 | `opencode-windows-x64.zip` | 64位 Windows（需 AVX2） |
-| Windows | x86_64 | `opencode-windows-x64-baseline.zip` | 无 AVX2 的 Windows |
+---
 
-> 💡 **如何判断是否需要 AVX2？** 2015年后的 x86 CPU 基本都支持。不确定就选 `baseline` 版本。
+## 🚀 快速开始
 
-```bash
-# Linux / macOS 示例
-tar xzf opencode-linux-x64.tar.gz
-chmod +x opencode
-sudo mv opencode /usr/local/bin/
+### 环境要求
 
-# Windows
-# 解压 opencode-windows-x64.zip，将 opencode.exe 放入 PATH 目录
-```
+- **Node.js** 18.0.0 或更高版本（推荐 22.x LTS）
+- **npm** 9+ 或 **pnpm** 8+
+- 无需 Bun！无需 Docker！无需特殊 CPU 指令集！
 
-### Web 部署模式
-
-OpenCode-CN 支持 Web 服务模式，可远程通过浏览器访问：
-
-```bash
-# 启动 Web 服务
-opencode serve --port 8090 --hostname 0.0.0.0
-
-# 访问 http://your-server:8090
-```
-
-### 从源码运行
+### 安装
 
 ```bash
 # 克隆仓库
-git clone https://gitee.com/xusuai/opencode-cn.git
-cd opencode-cn
+git clone https://gitee.com/xusuai/opencode-cn-nodejs.git
+cd opencode-cn-nodejs
 
-# 安装依赖（需要 Bun 1.3+）
-bun install
+# 安装依赖（纯 Node.js 方式）
+npm install
 
-# 开发模式
-bun run --cwd packages/opencode dev
+# 启动服务（开发模式）
+npx tsx --conditions=node --tsconfig tsconfig.json packages/opencode/src/index.ts serve --port 3000
 
-# Web 服务模式
-bun run --cwd packages/opencode src/index.ts serve --port 8090 --hostname 0.0.0.0
+# 或启动交互式终端
+npx tsx --conditions=node --tsconfig tsconfig.json packages/opencode/src/index.ts
+```
+
+### 系统服务（Production）
+
+```bash
+# 使用 systemd 管理（Linux）
+cat > /etc/systemd/system/opencode.service << 'EOF'
+[Unit]
+Description=OpenCode-CN-NodeJS Server
+After=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/path/to/opencode-cn-nodejs/packages/opencode
+ExecStart=/path/to/opencode-cn-nodejs/node_modules/.bin/tsx --conditions=node --tsconfig tsconfig.json ./src/index.ts serve --port 8099 --hostname 0.0.0.0
+Restart=always
+RestartSec=3
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now opencode
 ```
 
 ---
 
-## ✨ 中国区定制特性
+## 🏗️ 架构说明
 
-### 🌐 完整中文化 (i18n)
+本项目基于 **Node.js + tsx** 运行时，使用 `package.json` 的 `imports` 字段实现双运行时分发：
 
-OpenCode TUI 支持**中英文一键切换**：
+```
+#hono  →  adapter.bun.ts  (Bun 专用，本分支未使用)
+       →  adapter.node.ts  (Node.js 用，默认启用)  ✅
+#db    →  db.bun.ts        (Bun 专用，本分支未使用)
+       →  db.node.ts        (Node.js 用，默认启用)  ✅
+#pty   →  pty.bun.ts       (Bun 专用，本分支未使用)
+       →  pty.node.ts       (Node.js 用，默认启用)  ✅
+```
 
-- **634+ 翻译键**覆盖所有 TUI 元素 — 命令面板、状态栏、对话框、提示、帮助、错误信息
-- 输入 `/locale zh` 切换中文，`/locale en` 切换英文 — **无需重启**
-- 缺失键自动回退英文，防止空白界面
+tsconfig.json 已配置 `"customConditions": ["node"]`，确保 tsx/TypeScript 编译时自动选择 Node.js 适配器，完全绕过 Bun 相关代码路径。
 
-### 🀄 中文输入法 (IME) 支持
+### 与上游 OpenCode 的区别
 
-OpenCode 是**首个支持中文 (CJK) 输入法的终端 AI Coding Agent**：
-
-- **根因发现**：opentui 的 `createCliRenderer` 对 `useKittyKeyboard` 使用 `null ?? {}`，设置 `null` 反而**启用** Kitty 协议 — 将所有按键编码为 CSI 转义序列，绕过 IME 组合
-- **修复**：创建后显式调用 `renderer.disableKittyKeyboard()`，发送 `\x1b[>1u` 禁用 Kitty 协议并重置 stdin 解析器
-- **环境**：自动检测 IBus / Fcitx5；配合 `GTK_IM_MODULE=ibus` / `XMODIFIERS=@im=ibus` 开箱即用
-- **结果**：完整中文拼音输入 + 候选选择，在 gnome-terminal、WezTerm 等 IME 感知终端中完美运行
-
-### 🔧 火山方舟等国产模型适配
-
-已修复 `eager_input_streaming` 兼容性问题，可正常使用火山方舟 (ARK)、GLM 等国产模型提供商。
-
----
-
-## 🔒 安全加固
-
-五轮安全审计和加固，**132 项专项安全测试**：
-
-- **路径穿越防护** — `AppFileSystem.contains()` 先解析规范化路径再比较
-- **环境变量净化** — 子进程不再继承敏感密钥（`*_API_KEY`、`*_TOKEN`、`NODE_OPTIONS`、`LD_PRELOAD` 等）
-- **敏感信息脱敏** — `redactSensitiveInfo()` 从崩溃转储和错误日志中剥离 API Key、Token 和密码
-- **ANSI 注入防御** — MCP 工具输出渲染前剥离控制字符
-- **剪贴板 TOCTOU 修复** — 临时剪贴板文件使用加密随机后缀
-- **HTTP 错误安全** — 500 响应不再暴露堆栈跟踪
-
-详见 [SECURITY-REPORT.md](./SECURITY-REPORT.md)。
+| 对比项 | 上游 OpenCode | OpenCode-CN-NodeJS |
+|--------|--------------|-------------------|
+| 运行时 | Bun（必须） | Node.js + tsx（可选 Bun） |
+| 语言 | 英文为主 | **100% 简体中文** |
+| 适配器 | Bun.serve / Bun.sqlite | **Node HTTP / better-sqlite3** |
+| CPU 要求 | 无限制 | **无 AVX 要求** |
+| 内存 | 较高（Bun 驻留） | **更低（Node 按需分配）** |
+| 安装方式 | curl 脚本 | **git clone + npm install** |
 
 ---
 
-## ⚡ 性能与诊断
+## 🖥️ 命令行界面（CLI）
 
-- **`/diag` 命令** — 实时性能面板，显示渲染统计、内存使用、事件循环健康
-- **虚拟消息列表** — `MAX_VISIBLE_MESSAGES=50` 智能截断，支持 10万+ 消息会话
-- **文本背压** — `MAX_PART_LINES=5000` / `MAX_PART_CHARS=500_000` 防止大型工具输出导致内存飙升
-- **崩溃转储** — 未捕获错误自动转储，敏感信息已脱敏
-- **输入防抖** — 按键防抖避免不必要的重渲染
+完全中文化的命令行体验：
 
-详见 [PERF-REPORT.md](./PERF-REPORT.md)。
+```bash
+# 查看帮助（中文）
+npx tsx packages/opencode/src/index.ts --help
 
----
+# 启动 Web 服务
+npx tsx packages/opencode/src/index.ts serve --port 8099
 
-## 🛡️ 稳定性
+# 运行 AI Agent（中文对话）
+npx tsx packages/opencode/src/index.ts run "帮我重构这个函数"
 
-- **事件泄漏修复** — 11 个 `event.on()` 监听器使用 `onCleanup()` 修复，防止重复挂载/卸载时内存泄漏
-- **深度内存安全** — 15 个额外的防崩溃加固补丁
-- **存储引擎容错** — KV 存储不可用时优雅降级
-- **语言回退** — 缺失 i18n 键回退英文而非显示空白
+# 管理 Provider
+npx tsx packages/opencode/src/index.ts providers
+```
 
-详见 [STABILITY-REPORT.md](./STABILITY-REPORT.md)。
-
----
-
-## 🏆 八轮加固 · 生产级质量
-
-| 轮次 | 主题 | 修复数 | 测试数 |
-|------|------|--------|--------|
-| 1 | 🌐 i18n 中文本地化 | 15+ | 28 |
-| 2 | 🛡️ 事件泄漏 & 内存安全 | 11+ | 22 |
-| 3 | 🔧 深度内存 & 防崩溃 | 15+ | 35 |
-| 4 | ⚡ 性能 & 可观测性 | 8+ | 44 |
-| 5 | 🧱 鲁棒性 & 容错 | 10+ | 87 |
-| 6 | 🔒 安全审计 & CI | 8 | 132 |
-| 7 | 🀄 IME 修复 + 禁用自动更新 | 3 | 282 |
-| 8 | 🚀 发布加固 & 二进制 | 5+ | 282 |
-
-**关键指标：** 70+ 修复 · 282 测试全通过 · 0 类型错误 · 36项安全审计（8个严重/高危已修复）· **中文输入法可用** ✓
-
-详见 [PROJECT-STATUS.md](./PROJECT-STATUS.md)。
+所有终端输出、交互提示、错误信息均为简体中文。
 
 ---
 
-## 🤖 内置 Agent
+## 🔧 老机器兼容性
 
-按 `Tab` 键切换两种内置 Agent：
+本项目已移除所有对现代 CPU 指令集（AVX-512、AVX2、AVX）的隐式依赖，可在以下老旧硬件上正常运行：
 
-- **build** — 默认，全权限开发 Agent
-- **plan** — 只读 Agent，用于分析和代码探索
-  - 默认拒绝文件编辑
-  - 运行 bash 命令前请求许可
-  - 适合探索陌生代码库或规划变更
-
-另有 **general** 子 Agent 用于复杂搜索和多步骤任务，可在消息中用 `@general` 调用。
+- Intel Core 2 Duo / 4 代以前系列 ✅
+- AMD Phenom / Bulldozer 系列 ✅
+- 低配云服务器（1核 1G） ✅
+- 树莓派 3B+/4B ✅
+- 虚拟主机 / OpenVZ / LXC 容器 ✅
 
 ---
 
-## 📋 TUI 命令
+## 📜 许可证
 
-| 命令 | 说明 |
-|------|------|
-| `/locale zh` | 切换中文界面 |
-| `/locale en` | 切换英文界面 |
-| `/diag` | 打开诊断面板 |
-| `/compact` | 压缩对话历史 |
-| `/clear` | 清除当前会话 |
-| `/theme <名称>` | 切换颜色主题 |
-| `/share` | 通过 URL 分享会话 |
-| `Tab` | 切换 build/plan Agent |
-| `F9` | 打开工具对话框 |
-| `?` | 显示帮助 |
+本项目基于上游 OpenCode 的许可证发布。详情请参阅 [LICENSE](LICENSE) 文件。
 
 ---
 
-## 🔌 MCP 工具集成
-
-支持 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) 扩展 Agent 能力：
-
-- 在 `opencode.json` 中配置 MCP 服务器
-- 自动发现和工具注册
-- 权限管控执行
-
----
-
-## 📖 文档
-
-更多配置信息请参阅 [OpenCode 文档](https://gitee.com/xusuai/opencode-cn)。
-
-## 🤝 贡献
-
-欢迎贡献！请先阅读 [贡献指南](./CONTRIBUTING.md)。
-
-## 📄 许可证
-
-本项目基于上游 [OpenCode](https://github.com/anomalyco/opencode) (MIT License) 进行中国区定制。
-
----
-
-**社区** [Discord](https://discord.gg/opencode) | [X.com](https://x.com/opencode) | [Gitee](https://gitee.com/xusuai/opencode-cn)
+<p align="center">
+  <a href="https://gitee.com/xusuai/opencode-cn-nodejs">Gitee 仓库</a>
+</p>

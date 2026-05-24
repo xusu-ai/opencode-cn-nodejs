@@ -123,5 +123,5 @@ export const fileSearch = createProviderToolFactoryWithOutputSchema<
 >({
   id: "openai.file_search",
   inputSchema: z.object({}),
-  outputSchema: fileSearchOutputSchema,
+  outputSchema: fileSearchOutputSchema as any,
 })

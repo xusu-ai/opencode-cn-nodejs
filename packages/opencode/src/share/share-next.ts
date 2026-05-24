@@ -164,7 +164,7 @@ export const layer = Layer.effect(
 
         const watch = <D extends { type: string }>(
           def: D,
-          fn: (evt: { properties: any }) => Effect.Effect<void, unknown>,
+          fn: (evt: { properties: Record<string, unknown> }) => Effect.Effect<void, unknown>,
         ) =>
           bus.subscribe(def as never).pipe(
             Stream.runForEach((evt) =>
@@ -181,26 +181,32 @@ export const layer = Layer.effect(
 
         yield* watch(Session.Event.Updated, (evt) =>
           Effect.gen(function* () {
-            const info = yield* session.get(evt.properties.sessionID)
+            const props = evt.properties as { sessionID: SessionID }
+            const info = yield* session.get(props.sessionID)
             yield* sync(info.id, [{ type: "session", data: info }])
           }),
         )
         yield* watch(MessageV2.Event.Updated, (evt) =>
           Effect.gen(function* () {
-            const info = evt.properties.info
+            const info = evt.properties.info as MessageV2.Info
             yield* sync(info.sessionID, [{ type: "message", data: info }])
             if (info.role !== "user") return
             const model = yield* provider.getModel(info.model.providerID, info.model.modelID)
             yield* sync(info.sessionID, [{ type: "model", data: [model] }])
           }),
         )
-        yield* watch(MessageV2.Event.PartUpdated, (evt) =>
-          sync(evt.properties.part.sessionID, [{ type: "part", data: evt.properties.part }]),
-        )
-        yield* watch(Session.Event.Diff, (evt) =>
-          sync(evt.properties.sessionID, [{ type: "session_diff", data: evt.properties.diff }]),
-        )
-        yield* watch(Session.Event.Deleted, (evt) => remove(evt.properties.sessionID))
+        yield* watch(MessageV2.Event.PartUpdated, (evt) => {
+          const props = evt.properties as { part: MessageV2.Part; sessionID: SessionID }
+          return sync(props.part.sessionID, [{ type: "part", data: props.part }])
+        })
+        yield* watch(Session.Event.Diff, (evt) => {
+          const props = evt.properties as { sessionID: SessionID; diff: unknown }
+          return sync(props.sessionID, [{ type: "session_diff", data: props.diff as any }])
+        })
+        yield* watch(Session.Event.Deleted, (evt) => {
+          const props = evt.properties as { sessionID: SessionID }
+          return remove(props.sessionID)
+        })
 
         return cache
       }),
@@ -371,3 +377,5 @@ export const defaultLayer = layer.pipe(
   Layer.provide(Provider.defaultLayer),
   Layer.provide(Session.defaultLayer),
 )
+
+export * as ShareNext from "./share-next"

@@ -14,6 +14,7 @@ import { Flock } from "@opencode-ai/shared/util/flock"
 import { isRecord } from "@/util/record"
 
 import { parsePluginSpecifier, readPackageThemes, readPluginPackage, resolvePluginTarget } from "./shared"
+import type { PluginPackage } from "./shared"
 
 type Mode = "noop" | "add" | "replace"
 type Kind = "server" | "tui"
@@ -257,77 +258,43 @@ function patchPluginList(
 }
 
 export async function installPlugin(spec: string, dep: InstallDeps = defaultInstallDeps): Promise<InstallResult> {
-  const target = await dep.resolve(spec).then(
-    (item) => ({
-      ok: true as const,
-      item,
-    }),
-    (error: unknown) => ({
-      ok: false as const,
-      error,
-    }),
-  )
+  const target = await dep.resolve(spec)
+    .then((item) => ({ ok: true as const, item }))
+    .catch((error: unknown) => ({ ok: false as const, error }))
   if (!target.ok) {
-    return {
-      ok: false,
-      code: "install_failed",
-      error: target.error,
-    }
+    const err = target as { ok: false; error: unknown }
+    return { ok: false, code: "install_failed", error: err.error }
   }
-  return {
-    ok: true,
-    target: target.item,
-  }
+  const ok = target as { ok: true; item: string }
+  return { ok: true, target: ok.item }
 }
 
 export async function readPluginManifest(target: string): Promise<ManifestResult> {
-  const pkg = await readPluginPackage(target).then(
-    (item) => ({
-      ok: true as const,
-      item,
-    }),
-    (error: unknown) => ({
-      ok: false as const,
-      error,
-    }),
-  )
+  const pkg = await readPluginPackage(target)
+    .then((item) => ({ ok: true as const, item }))
+    .catch((error: unknown) => ({ ok: false as const, error }))
   if (!pkg.ok) {
-    return {
-      ok: false,
-      code: "manifest_read_failed",
-      file: target,
-      error: pkg.error,
-    }
+    const err = pkg as { ok: false; error: unknown }
+    return { ok: false, code: "manifest_read_failed", file: target, error: err.error }
   }
+  const pkgOk = pkg as { ok: true; item: PluginPackage }
 
   const targets = await Promise.resolve()
-    .then(() => packageTargets(pkg.item))
-    .then(
-      (item) => ({ ok: true as const, item }),
-      (error: unknown) => ({ ok: false as const, error }),
-    )
+    .then(() => packageTargets(pkgOk.item))
+    .then((item) => ({ ok: true as const, item }))
+    .catch((error: unknown) => ({ ok: false as const, error }))
 
   if (!targets.ok) {
-    return {
-      ok: false,
-      code: "manifest_read_failed",
-      file: pkg.item.pkg,
-      error: targets.error,
-    }
+    const err = targets as { ok: false; error: unknown }
+    return { ok: false, code: "manifest_read_failed", file: pkgOk.item.pkg, error: err.error }
+  }
+  const targetOk = targets as { ok: true; item: Target[] }
+
+  if (!targetOk.item.length) {
+    return { ok: false, code: "manifest_no_targets", file: pkgOk.item.pkg }
   }
 
-  if (!targets.item.length) {
-    return {
-      ok: false,
-      code: "manifest_no_targets",
-      file: pkg.item.pkg,
-    }
-  }
-
-  return {
-    ok: true,
-    targets: targets.item,
-  }
+  return { ok: true, targets: targetOk.item }
 }
 
 function patchDir(input: PatchInput) {
@@ -424,12 +391,11 @@ export async function patchPluginConfig(input: PatchInput, dep: PatchDeps = defa
   for (const target of input.targets) {
     const hit = await patchOne(dir, target, input.spec, Boolean(input.force), dep)
     if (!hit.ok) {
-      return {
-        ...hit,
-        dir,
-      }
+      const hitErr = hit as { ok: false; code: "invalid_json" | "patch_failed"; kind: Kind; file?: string; line?: number; col?: number; parse?: string; error?: unknown }
+      return { ok: false, code: hitErr.code, kind: hitErr.kind, file: hitErr.file, line: hitErr.line, col: hitErr.col, parse: hitErr.parse, error: hitErr.error, dir }
     }
-    items.push(hit.item)
+    const hitOk = hit as { ok: true; item: PatchItem }
+    items.push(hitOk.item)
   }
   return {
     ok: true,

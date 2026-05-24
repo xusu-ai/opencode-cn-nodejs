@@ -1,4 +1,3 @@
-import type { SQLiteBunDatabase } from "drizzle-orm/bun-sqlite"
 import type { NodeSQLiteDatabase } from "drizzle-orm/node-sqlite"
 import { Global } from "../global"
 import { Log } from "../util"
@@ -22,7 +21,7 @@ type Options = {
   progress?: (event: Progress) => void
 }
 
-export async function run(db: SQLiteBunDatabase<any, any> | NodeSQLiteDatabase<any, any>, options?: Options) {
+export async function run(db: NodeSQLiteDatabase<any, any>, options?: Options) {
   const storageDir = path.join(Global.Path.data, "storage")
 
   if (!existsSync(storageDir)) {
@@ -156,9 +155,8 @@ export async function run(db: SQLiteBunDatabase<any, any> | NodeSQLiteDatabase<a
 
   progress?.({ current, total, label: "starting" })
 
-  db.run("BEGIN TRANSACTION")
-
   try {
+    db.run("BEGIN TRANSACTION")
   // Migrate projects first (no FK deps)
   // Derive all IDs from file paths, not JSON content
   const projectIds = new Set<string>()
@@ -264,9 +262,7 @@ export async function run(db: SQLiteBunDatabase<any, any> | NodeSQLiteDatabase<a
       const id = path.basename(file, ".json")
       const sessionID = allMessageSessions[i + j]
       messageSessions.set(id, sessionID)
-      const rest = data
-      delete rest.id
-      delete rest.sessionID
+      const { id: _id, sessionID: _sid, ...rest } = data
       values[count++] = {
         id,
         session_id: sessionID,
@@ -300,10 +296,7 @@ export async function run(db: SQLiteBunDatabase<any, any> | NodeSQLiteDatabase<a
         continue
       }
       if (!sessionIds.has(sessionID)) continue
-      const rest = data
-      delete rest.id
-      delete rest.messageID
-      delete rest.sessionID
+      const { id: _id, messageID: _mid, sessionID: _sid, ...rest } = data
       values[count++] = {
         id,
         message_id: messageID,
@@ -422,6 +415,11 @@ export async function run(db: SQLiteBunDatabase<any, any> | NodeSQLiteDatabase<a
     }
     errs.push(`transaction failed: ${err}`)
     log.warn("migration transaction failed, rolled back", { error: String(err) })
+  } finally {
+    // Restore normal safety level after bulk-insert optimization
+    try { db.run("PRAGMA synchronous = NORMAL") } catch (e) {
+      log.warn("failed to restore synchronous pragma", { error: String(e) })
+    }
   }
 
   log.info("json migration complete", {

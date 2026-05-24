@@ -172,16 +172,23 @@ export class Agent implements ACPAgent {
   private async runEventSubscription() {
     while (true) {
       if (this.eventAbort.signal.aborted) return
-      const events = await this.sdk.global.event({
-        signal: this.eventAbort.signal,
-      })
-      for await (const event of events.stream) {
-        if (this.eventAbort.signal.aborted) return
-        const payload = event?.payload
-        if (!payload) continue
-        await this.handleEvent(payload as Event).catch((error) => {
-          log.error("failed to handle event", { error, type: payload.type })
+      try {
+        const events = await this.sdk.global.event({
+          signal: this.eventAbort.signal,
         })
+        for await (const event of events.stream) {
+          if (this.eventAbort.signal.aborted) return
+          const payload = event?.payload
+          if (!payload) continue
+          await this.handleEvent(payload as Event).catch((error) => {
+            log.error("failed to handle event", { error, type: payload.type })
+          })
+        }
+      } catch (error) {
+        if (this.eventAbort.signal.aborted) return
+        log.error("event stream error, reconnecting", { error })
+        // Small delay before reconnect to avoid tight loop
+        await new Promise((resolve) => setTimeout(resolve, 1000))
       }
     }
   }
@@ -235,7 +242,7 @@ export class Agent implements ACPAgent {
               return
             }
 
-            if (res.outcome.optionId !== "reject" && permission.permission == "edit") {
+            if (res.outcome.optionId !== "reject" && permission.permission === "edit") {
               const metadata = permission.metadata || {}
               const filepath = typeof metadata["filepath"] === "string" ? metadata["filepath"] : ""
               const diff = typeof metadata["diff"] === "string" ? metadata["diff"] : ""
@@ -372,7 +379,13 @@ export class Agent implements ACPAgent {
               }
 
               if (part.tool === "todowrite") {
-                const parsedTodos = z.array(Todo.Info).safeParse(JSON.parse(part.state.output))
+                let parsedTodos
+                try {
+                  parsedTodos = z.array(Todo.Info).safeParse(JSON.parse(part.state.output))
+                } catch {
+                  log.error("failed to parse todo output JSON")
+                  return
+                }
                 if (parsedTodos.success) {
                   await this.connection
                     .sessionUpdate({
@@ -901,7 +914,12 @@ export class Agent implements ACPAgent {
             }
 
             if (part.tool === "todowrite") {
-              const parsedTodos = z.array(Todo.Info).safeParse(JSON.parse(part.state.output))
+              let parsedTodos
+              try {
+                parsedTodos = z.array(Todo.Info).safeParse(JSON.parse(part.state.output))
+              } catch {
+                return
+              }
               if (parsedTodos.success) {
                 await this.connection
                   .sessionUpdate({
@@ -1629,20 +1647,21 @@ async function defaultModel(config: ACPConfig, cwd?: string): Promise<{ provider
     if (opencodeProvider.models["big-pickle"]) {
       return { providerID: ProviderID.opencode, modelID: ModelID.make("big-pickle") }
     }
-    const [best] = Provider.sort(Object.values(opencodeProvider.models))
+    const models = Object.values(opencodeProvider.models) as { id: string; providerID?: string }[]
+    const [best] = Provider.sort(models)
     if (best) {
       return {
-        providerID: ProviderID.make(best.providerID),
+        providerID: ProviderID.make(best.providerID ?? "opencode"),
         modelID: ModelID.make(best.id),
       }
     }
   }
 
-  const models = providers.flatMap((p) => Object.values(p.models))
+  const models = providers.flatMap((p) => Object.values(p.models)) as { id: string; providerID?: string }[]
   const [best] = Provider.sort(models)
   if (best) {
     return {
-      providerID: ProviderID.make(best.providerID),
+      providerID: ProviderID.make(best.providerID ?? "opencode"),
       modelID: ModelID.make(best.id),
     }
   }

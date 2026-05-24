@@ -50,3 +50,4 @@ export function makeRuntime<I, S, E>(service: Context.Service<I, S>, layer: Laye
       getRuntime().runCallback(attach(service.use(fn))),
   }
 }
+export * as RunService from "./run-service"

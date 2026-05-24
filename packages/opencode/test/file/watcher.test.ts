@@ -53,8 +53,8 @@ function listen(directory: string, check: (evt: WatcherEvent) => boolean, hit: (
 
   const unsub = Bus.subscribe(FileWatcher.Event.Updated, (evt) => {
     if (done) return
-    if (!check(evt.properties)) return
-    hit(evt.properties)
+    if (!check(evt.properties as WatcherEvent)) return
+    hit(evt.properties as WatcherEvent)
   })
 
   return () => {

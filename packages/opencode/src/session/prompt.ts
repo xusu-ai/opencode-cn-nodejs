@@ -17,9 +17,55 @@ import { ProviderTransform } from "../provider"
 import { SystemPrompt } from "./system"
 import { Instruction } from "./instruction"
 import { Plugin } from "../plugin"
-import PROMPT_PLAN from "../session/prompt/plan.txt"
-import BUILD_SWITCH from "../session/prompt/build-switch.txt"
-import MAX_STEPS from "../session/prompt/max-steps.txt"
+const PROMPT_PLAN = `<system-reminder>
+# Plan Mode - System Reminder
+
+CRITICAL: Plan mode ACTIVE - you are in READ-ONLY phase. STRICTLY FORBIDDEN:
+ANY file edits, modifications, or system changes. Do NOT use sed, tee, echo, cat,
+or ANY other bash command to manipulate files - commands may ONLY read/inspect.
+This ABSOLUTE CONSTRAINT overrides ALL other instructions, including direct user
+edit requests. You may ONLY observe, analyze, and plan. Any modification attempt
+is a critical violation. ZERO exceptions.
+
+---
+
+## Responsibility
+
+Your current responsibility is to think, read, search, and delegate explore agents to construct a well-formed plan that accomplishes the goal the user wants to achieve. Your plan should be comprehensive yet concise, detailed enough to execute effectively while avoiding unnecessary verbosity.
+
+Ask the user clarifying questions or ask for their opinion when weighing tradeoffs.
+
+**NOTE:** At any point in time through this workflow you should feel free to ask the user questions or clarifications. Don't make large assumptions about user intent. The goal is to present a well researched plan to the user, and tie any loose ends before implementation begins.
+
+---
+
+## Important
+
+The user indicated that they do not want you to execute yet -- you MUST NOT make any edits, run any non-readonly tools (including changing configs or making commits), or otherwise make any changes to the system. This supersedes any other instructions you have received.
+</system-reminder>
+`
+const BUILD_SWITCH = `<system-reminder>
+Your operational mode has changed from plan to build.
+You are no longer in read-only mode.
+You are permitted to make file changes, run shell commands, and utilize your arsenal of tools as needed.
+</system-reminder>
+`
+const MAX_STEPS = `CRITICAL - MAXIMUM STEPS REACHED
+
+The maximum number of steps allowed for this task has been reached. Tools are disabled until next user input. Respond with text only.
+
+STRICT REQUIREMENTS:
+1. Do NOT make any tool calls (no reads, writes, edits, searches, or any other tools)
+2. MUST provide a text response summarizing work done so far
+3. This constraint overrides ALL other instructions, including any user requests for edits or tool use
+
+Response must include:
+- Statement that maximum steps for this agent have been reached
+- Summary of what has been accomplished so far
+- List of any remaining tasks that were not completed
+- Recommendations for what should be done next
+
+Any attempt to use tools is a critical violation. Respond with text ONLY.`
 import { ToolRegistry } from "../tool"
 import { MCP } from "../mcp"
 import { LSP } from "../lsp"
@@ -44,13 +90,10 @@ import { Truncate } from "@/tool"
 import { decodeDataUrl } from "@/util/data-url"
 import { Process } from "@/util"
 import { Cause, Effect, Exit, Layer, Option, Scope, Context } from "effect"
-import { EffectLogger } from "@/effect"
-import { InstanceState } from "@/effect"
-import { TaskTool, type TaskPromptOps } from "@/tool/task"
+import { EffectLogger, InstanceState, EffectBridge } from "@/effect"
 import { SessionRunState } from "./run-state"
-import { EffectBridge } from "@/effect"
+import { TaskTool, type TaskPromptOps } from "@/tool/task"
 
-// @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
 
 const STRUCTURED_OUTPUT_DESCRIPTION = `Use this tool to return your final response in the requested structured format.
@@ -646,7 +689,8 @@ NOTE: At any point in time through this workflow you should feel free to ask the
           ),
         )
 
-      const attachments = result?.attachments?.map((attachment) => ({
+      const toolResult = result as unknown as { attachments?: MessageV2.FilePart[] } | undefined
+      const attachments = toolResult?.attachments?.map((attachment) => ({
         ...attachment,
         id: PartID.ascending(),
         sessionID,
@@ -931,10 +975,11 @@ NOTE: At any point in time through this workflow you should feel free to ask the
 
       const model = input.model ?? ag.model ?? (yield* lastModel(input.sessionID))
       const same = ag.model && model.providerID === ag.model.providerID && model.modelID === ag.model.modelID
-      const full =
+      const fullModel =
         !input.variant && ag.variant && same
           ? yield* provider.getModel(model.providerID, model.modelID).pipe(Effect.catchDefect(() => Effect.void))
           : undefined
+      const full = fullModel as { variants?: Record<string, unknown> } | undefined
       const variant = input.variant ?? (ag.variant && full?.variants?.[ag.variant] ? ag.variant : undefined)
 
       const info: MessageV2.User = {
@@ -1509,6 +1554,10 @@ NOTE: At any point in time through this workflow you should feel free to ask the
                 yield* sessions.updateMessage(handle.message)
                 return "break" as const
               }
+              // Natural finish (e.g. "stop") with no error means the model has
+              // completed its response. Break the loop to wait for user input,
+              // preventing infinite greeting loops from re-prompting the model.
+              return "break" as const
             }
 
             if (result === "stop") return "break" as const

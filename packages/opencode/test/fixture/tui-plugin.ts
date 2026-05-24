@@ -161,7 +161,7 @@ export function createTuiPluginApi(opts: Opts = {}): HostPluginApi {
       },
     },
     get client() {
-      return client()
+      return client() as any
     },
     event: {
       on: () => {

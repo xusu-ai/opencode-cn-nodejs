@@ -44,16 +44,6 @@ function generateID(prefix: keyof typeof prefixes, direction: "descending" | "as
   return given
 }
 
-function randomBase62(length: number): string {
-  const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-  let result = ""
-  const bytes = randomBytes(length)
-  for (let i = 0; i < length; i++) {
-    result += chars[bytes[i] % 62]
-  }
-  return result
-}
-
 export function create(prefix: string, direction: "descending" | "ascending", timestamp?: number): string {
   const currentTimestamp = timestamp ?? Date.now()
 
@@ -61,9 +51,9 @@ export function create(prefix: string, direction: "descending" | "ascending", ti
     lastTimestamp = currentTimestamp
     counter = 0
   }
-  counter++
+  const currentCounter = ++counter
 
-  let now = BigInt(currentTimestamp) * BigInt(0x1000) + BigInt(counter)
+  let now = BigInt(currentTimestamp) * BigInt(0x1000) + BigInt(currentCounter)
 
   now = direction === "descending" ? ~now : now
 
@@ -73,6 +63,16 @@ export function create(prefix: string, direction: "descending" | "ascending", ti
   }
 
   return prefix + "_" + timeBytes.toString("hex") + randomBase62(LENGTH - 12)
+}
+
+function randomBase62(length: number): string {
+  const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+  let result = ""
+  const bytes = randomBytes(length)
+  for (let i = 0; i < length; i++) {
+    result += chars[bytes[i] % 62]
+  }
+  return result
 }
 
 /** Extract timestamp from an ascending ID. Does not work with descending IDs. */

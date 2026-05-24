@@ -12,7 +12,13 @@ import { ProviderError } from "@/provider"
 import { iife } from "@/util/iife"
 import { errorMessage } from "@/util/error"
 import { isMedia } from "@/util/media"
-import type { SystemError } from "bun"
+// Node-compatible polyfill for Bun's SystemError
+interface SystemError {
+  code?: string
+  syscall?: string
+  message: string
+  errno?: number
+}
 import type { Provider } from "@/provider"
 import { ModelID, ProviderID } from "@/provider/schema"
 import { Effect, Schema, Types } from "effect"
@@ -984,7 +990,7 @@ export function page(input: { sessionID: SessionID; limit: number; before?: stri
   )
   if (rows.length === 0) {
     const row = Database.use((db) =>
-      db.select({ id: SessionTable.id }).from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get(),
+      (db as any).select({ id: SessionTable.id }).from(SessionTable).where(eq(SessionTable.id, input.sessionID)).get(),
     )
     if (!row) throw new NotFoundError({ message: `Session not found: ${input.sessionID}` })
     return {
@@ -1067,8 +1073,6 @@ export function filterCompacted(msgs: Iterable<WithParts>) {
       if (msg.info.id === retain) break
       continue
     }
-    if (msg.info.role === "user" && completed.has(msg.info.id) && msg.parts.some((part) => part.type === "compaction"))
-      break
     if (msg.info.role === "assistant" && msg.info.summary && msg.info.finish && !msg.info.error)
       completed.add(msg.info.parentID)
   }

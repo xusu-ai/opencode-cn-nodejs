@@ -17,8 +17,9 @@ export const adapter: Adapter = {
         const start = (port: number) => {
           try {
             return Bun.serve({ ...args, port })
-          } catch {
-            return
+          } catch (err) {
+            console.error(`[server] Failed to start Bun server on port ${port}:`, err)
+            return undefined
           }
         }
         const server = opts.port === 0 ? (start(4096) ?? start(0)) : start(opts.port)

@@ -110,12 +110,15 @@ function setupApp() {
     })
   }
 
-  void app.whenReady().then(async () => {
+  app.whenReady().then(async () => {
     app.setAsDefaultProtocolClient("opencode")
     registerRendererProtocol()
     setDockIcon()
     setupAutoUpdater()
     await initialize()
+  }).catch((err) => {
+    logger.error("initialization failed", err)
+    app.exit(1)
   })
 }
 
@@ -166,11 +169,6 @@ async function initialize() {
         },
       })
       initEmitter.emit("sqlite", { type: "Done" })
-
-      sqliteDone?.resolve()
-    }
-
-    if (needsMigration) {
       await sqliteDone?.promise
     }
 

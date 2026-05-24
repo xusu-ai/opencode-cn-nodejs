@@ -1,3 +1,4 @@
+export * as ConfigServer from "./server"
 import { Schema } from "effect"
 import { zod } from "@/util/effect-zod"
 import { withStatics } from "@/util/schema"
@@ -18,5 +19,3 @@ export const Server = Schema.Struct({
   .annotate({ identifier: "ServerConfig" })
   .pipe(withStatics((s) => ({ zod: zod(s) })))
 export type Server = Schema.Schema.Type<typeof Server>
-
-export * as ConfigServer from "./server"

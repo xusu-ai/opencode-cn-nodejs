@@ -1,13 +1,16 @@
 import { Player } from "cli-sound"
-import { mkdirSync } from "node:fs"
+import { copyFileSync, mkdirSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { basename, join } from "node:path"
+import { basename, dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { Process } from "@/util"
 import { which } from "@/util/which"
-import pulseA from "../asset/pulse-a.wav" with { type: "file" }
-import pulseB from "../asset/pulse-b.wav" with { type: "file" }
-import pulseC from "../asset/pulse-c.wav" with { type: "file" }
-import charge from "../asset/charge.wav" with { type: "file" }
+
+const _soundDir = dirname(fileURLToPath(import.meta.url))
+const pulseA = join(_soundDir, "../asset/pulse-a.wav")
+const pulseB = join(_soundDir, "../asset/pulse-b.wav")
+const pulseC = join(_soundDir, "../asset/pulse-c.wav")
+const charge = join(_soundDir, "../asset/charge.wav")
 
 const FILE = [pulseA, pulseB, pulseC]
 
@@ -64,9 +67,11 @@ function load() {
 async function file(path: string) {
   mkdirSync(DIR, { recursive: true })
   const next = join(DIR, basename(path))
-  const out = Bun.file(next)
-  if (await out.exists()) return next
-  await Bun.write(out, Bun.file(path))
+  try {
+    copyFileSync(path, next)
+  } catch {
+    // silently ignore — sound is a nice-to-have
+  }
   return next
 }
 

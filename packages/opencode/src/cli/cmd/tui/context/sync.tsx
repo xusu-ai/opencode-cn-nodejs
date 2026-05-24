@@ -30,6 +30,8 @@ import { useArgs } from "./args"
 import { batch, onCleanup, onMount } from "solid-js"
 import { Log } from "@/util"
 import { emptyConsoleState, type ConsoleState } from "@/config/console-state"
+import type { GlobalInfo as SessionGlobalInfo } from "@/session/session"
+import type { WithParts, Part as MsgPart } from "@/session/message-v2"
 import { diagMarkAsync } from "./diag"
 
 // Backpressure limits: prevent OOM from unbounded stream output
@@ -132,7 +134,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           setStore(
             "permission",
             event.properties.sessionID,
-            produce((draft) => {
+            produce((draft: PermissionRequest[]) => {
               draft.splice(match.index, 1)
             }),
           )
@@ -154,7 +156,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           setStore(
             "permission",
             request.sessionID,
-            produce((draft) => {
+            produce((draft: PermissionRequest[]) => {
               draft.splice(match.index, 0, request)
             }),
           )
@@ -170,7 +172,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           setStore(
             "question",
             event.properties.sessionID,
-            produce((draft) => {
+            produce((draft: QuestionRequest[]) => {
               draft.splice(match.index, 1)
             }),
           )
@@ -192,7 +194,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           setStore(
             "question",
             request.sessionID,
-            produce((draft) => {
+            produce((draft: QuestionRequest[]) => {
               draft.splice(match.index, 0, request)
             }),
           )
@@ -235,9 +237,9 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           }
           setStore(
             "session",
-            produce((draft) => {
-              draft.splice(result.index, 0, event.properties.info)
-            }),
+            (produce((draft: SessionGlobalInfo[]) => {
+              draft.splice(result.index, 0, event.properties.info as any)
+            }) as any),
           )
           break
         }
@@ -261,9 +263,9 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           setStore(
             "message",
             event.properties.info.sessionID,
-            produce((draft) => {
-              draft.splice(result.index, 0, event.properties.info)
-            }),
+            (produce((draft: WithParts[]) => {
+              draft.splice(result.index, 0, event.properties.info as any)
+            }) as any),
           )
           const updated = store.message[event.properties.info.sessionID]
           if (updated.length > 100) {
@@ -272,9 +274,9 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
               setStore(
                 "message",
                 event.properties.info.sessionID,
-                produce((draft) => {
+                (produce((draft: WithParts[]) => {
                   draft.shift()
-                }),
+                }) as any),
               )
               setStore(
                 "part",
@@ -290,13 +292,13 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           const messages = store.message[event.properties.sessionID]
           const result = Binary.search(messages, event.properties.messageID, (m) => m.id)
           if (result.found) {
-            setStore(
-              "message",
-              event.properties.sessionID,
-              produce((draft) => {
-                draft.splice(result.index, 1)
-              }),
-            )
+              setStore(
+                "message",
+                event.properties.sessionID,
+                (produce((draft: WithParts[]) => {
+                  draft.splice(result.index, 1)
+                }) as any),
+              )
           }
           break
         }
@@ -314,9 +316,9 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           setStore(
             "part",
             event.properties.part.messageID,
-            produce((draft) => {
-              draft.splice(result.index, 0, event.properties.part)
-            }),
+            (produce((draft: MsgPart[]) => {
+              draft.splice(result.index, 0, event.properties.part as any)
+            }) as any),
           )
           break
         }
@@ -352,13 +354,13 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           const parts = store.part[event.properties.messageID]
           const result = Binary.search(parts, event.properties.partID, (p) => p.id)
           if (result.found)
-            setStore(
-              "part",
-              event.properties.messageID,
-              produce((draft) => {
-                draft.splice(result.index, 1)
-              }),
-            )
+              setStore(
+                "part",
+                event.properties.messageID,
+                (produce((draft: MsgPart[]) => {
+                  draft.splice(result.index, 1)
+                }) as any),
+              )
           break
         }
 

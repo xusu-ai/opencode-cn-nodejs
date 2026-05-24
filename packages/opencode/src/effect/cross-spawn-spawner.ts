@@ -512,3 +512,5 @@ const rt = lazy(async () => {
 
 type RT = Awaited<ReturnType<typeof rt>>
 export const runPromiseExit: RT["runPromiseExit"] = async (...args) => (await rt()).runPromiseExit(...(args as [any]))
+
+export * as CrossSpawnSpawner from "./cross-spawn-spawner"

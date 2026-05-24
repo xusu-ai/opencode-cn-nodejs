@@ -7,7 +7,7 @@ import * as Truncate from "./truncate"
 import { Agent } from "@/agent/agent"
 
 interface Metadata {
-  [key: string]: any
+  [key: string]: unknown
 }
 
 // TODO: remove this hack

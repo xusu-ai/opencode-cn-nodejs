@@ -174,7 +174,7 @@ export const layer = Layer.effect(
           if (cfg.lsp !== true) {
             for (const [name, item] of Object.entries(cfg.lsp)) {
               const existing = servers[name]
-              if (item.disabled) {
+              if (!("command" in item) || item.disabled) {
                 log.info(`LSP server ${name} is disabled`)
                 delete servers[name]
                 continue

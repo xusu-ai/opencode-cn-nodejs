@@ -173,7 +173,7 @@ export function replay(event: SerializedEvent, options?: { publish: boolean }) {
   }
 
   const row = Database.use((db) =>
-    db
+    (db as any)
       .select({ seq: EventSequenceTable.seq })
       .from(EventSequenceTable)
       .where(eq(EventSequenceTable.aggregate_id, event.aggregateID))
@@ -232,7 +232,7 @@ export function run<Def extends Definition>(def: Def, data: Event<Def>["data"], 
   Database.transaction(
     (tx) => {
       const id = EventID.ascending()
-      const row = tx
+      const row = (tx as any)
         .select({ seq: EventSequenceTable.seq })
         .from(EventSequenceTable)
         .where(eq(EventSequenceTable.aggregate_id, agg))

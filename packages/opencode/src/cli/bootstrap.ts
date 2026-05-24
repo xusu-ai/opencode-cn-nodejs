@@ -5,7 +5,7 @@ import { Instance } from "../project/instance"
 export async function bootstrap<T>(directory: string, cb: () => Promise<T>) {
   return Instance.provide({
     directory,
-    init: () => AppRuntime.runPromise(InstanceBootstrap),
+    init: () => AppRuntime.runPromise(InstanceBootstrap as never),
     fn: async () => {
       try {
         const result = await cb()

@@ -19,8 +19,8 @@ export function wslPath(path: string, mode: "windows" | "linux" | null): string 
   const flag = mode === "windows" ? "-w" : "-u"
   try {
     if (path.startsWith("~")) {
-      const suffix = path.slice(1)
-      const cmd = `wslpath ${flag} "$HOME${suffix.replace(/"/g, '\\"')}"`
+      const suffix = path.slice(1).replace(/[^a-zA-Z0-9._~\-\\\/ ]/g, "")
+      const cmd = `wslpath ${flag} "$HOME${suffix}"`
       const output = execFileSync("wsl", ["-e", "sh", "-lc", cmd])
       return output.toString().trim()
     }
@@ -67,7 +67,8 @@ function resolveWindowsAppPath(appName: string): string | null {
   if (exe) return exe
 
   const resolveCmd = (path: string) => {
-    const content = readFileSync(path, "utf8")
+    let content: string
+    try { content = readFileSync(path, "utf8") } catch { return }
     for (const token of content.split('"').map((value: string) => value.trim())) {
       const lower = token.toLowerCase()
       if (!lower.includes(".exe")) continue

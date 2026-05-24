@@ -1,5 +1,5 @@
-import { type SQLiteBunDatabase } from "drizzle-orm/bun-sqlite"
-import { migrate } from "drizzle-orm/bun-sqlite/migrator"
+import { type NodeSQLiteDatabase } from "drizzle-orm/node-sqlite"
+import { migrate } from "drizzle-orm/node-sqlite/migrator"
 import { type SQLiteTransaction } from "drizzle-orm/sqlite-core"
 export * from "drizzle-orm"
 import { LocalContext } from "../util"
@@ -14,7 +14,7 @@ import { Flag } from "../flag/flag"
 import { InstallationChannel } from "../installation/version"
 import { InstanceState } from "@/effect"
 import { iife } from "@/util/iife"
-import { init } from "#db"
+import { init } from "./db.node"
 
 declare const OPENCODE_MIGRATIONS: { sql: string; timestamp: number; name: string }[] | undefined
 
@@ -44,7 +44,7 @@ export const Path = iife(() => {
 
 export type Transaction = SQLiteTransaction<"sync", void>
 
-type Client = SQLiteBunDatabase
+type Client = NodeSQLiteDatabase
 
 type Journal = { sql: string; timestamp: number; name: string }[]
 
@@ -123,7 +123,22 @@ export const Client = lazy(() => {
           item.sql = "select 1;"
         }
       }
-      migrate(db, entries)
+      // drizzle-orm migrate() expects { migrationsFolder } path, not Journal array
+      // https://orm.drizzle.team/docs/migrations
+      try {
+        for (const item of entries) {
+          const stmts = Array.isArray(item.sql) ? item.sql : item.sql.split("--> statement-breakpoint")
+          for (const stmt of stmts) {
+            const trimmed = stmt.trim()
+            if (trimmed) {
+              ;(db as any).$client.exec(trimmed)
+            }
+          }
+        }
+      } catch (migrateErr) {
+        log.warn("failed to apply migrations inline, falling back to standard drizzle migrator", { error: String(migrateErr) })
+        migrate(db, { migrationsFolder: path.join(import.meta.dirname, "../../migration") })
+      }
     }
   } catch (err) {
     log.warn("failed to apply database migrations", { error: String(err) })

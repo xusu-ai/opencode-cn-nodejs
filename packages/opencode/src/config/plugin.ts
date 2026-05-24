@@ -1,3 +1,4 @@
+export * as ConfigPlugin from "./plugin"
 import { Glob } from "@opencode-ai/shared/util/glob"
 import { Schema } from "effect"
 import { pathToFileURL } from "url"
@@ -84,5 +85,3 @@ export function deduplicatePluginOrigins(plugins: Origin[]): Origin[] {
 
   return list.toReversed()
 }
-
-export * as ConfigPlugin from "./plugin"

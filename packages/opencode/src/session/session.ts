@@ -2,8 +2,8 @@ import { Slug } from "@opencode-ai/shared/util/slug"
 import path from "path"
 import { BusEvent } from "@/bus/bus-event"
 import { Bus } from "@/bus"
-import { Decimal } from "decimal.js"
 import z from "zod"
+import { Decimal } from "decimal.js"
 import { type ProviderMetadata, type LanguageModelUsage } from "ai"
 import { Flag } from "../flag/flag"
 import { InstallationVersion } from "../installation/version"
@@ -278,10 +278,8 @@ export const getUsage = (input: { model: Provider.Model; usage: LanguageModelUsa
         // google-vertex-anthropic returns metadata under "vertex" key
         // (AnthropicMessagesLanguageModel custom provider key from 'vertex.anthropic.messages')
         input.metadata?.["vertex"]?.["cacheCreationInputTokens"] ??
-        // @ts-expect-error
-        input.metadata?.["bedrock"]?.["usage"]?.["cacheWriteInputTokens"] ??
-        // @ts-expect-error
-        input.metadata?.["venice"]?.["usage"]?.["cacheCreationInputTokens"] ??
+        (input.metadata as Record<string, any>)?.["bedrock"]?.["usage"]?.["cacheWriteInputTokens"] ??
+        (input.metadata as Record<string, any>)?.["venice"]?.["usage"]?.["cacheCreationInputTokens"] ??
         0,
     ),
   )
@@ -455,10 +453,6 @@ export const layer: Layer.Layer<Service, never, Bus.Service | Storage.Service> =
           yield* remove(child.id)
         }
 
-        // `remove` needs to work in all cases, such as a broken
-        // sessions that run cleanup. In certain cases these will
-        // run without any instance state, so we need to turn off
-        // publishing of events in that case
         const hasInstance = yield* InstanceState.directory.pipe(
           Effect.as(true),
           Effect.catchCause(() => Effect.succeed(false)),
@@ -725,7 +719,8 @@ export function* list(input?: {
     conditions.push(gte(SessionTable.time_updated, input.start))
   }
   if (input?.search) {
-    conditions.push(like(SessionTable.title, `%${input.search}%`))
+    const escaped = input.search.replace(/[%_\\]/g, (c) => `\\${c}`)
+    conditions.push(like(SessionTable.title, `%${escaped}%`))
   }
 
   const limit = input?.limit ?? 100
@@ -768,7 +763,8 @@ export function* listGlobal(input?: {
     conditions.push(lt(SessionTable.time_updated, input.cursor))
   }
   if (input?.search) {
-    conditions.push(like(SessionTable.title, `%${input.search}%`))
+    const escaped = input.search.replace(/[%_\\]/g, (c) => `\\${c}`)
+    conditions.push(like(SessionTable.title, `%${escaped}%`))
   }
   if (!input?.archived) {
     conditions.push(isNull(SessionTable.time_archived))
@@ -792,7 +788,7 @@ export function* listGlobal(input?: {
 
   if (ids.length > 0) {
     const items = Database.use((db) =>
-      db
+      (db as any)
         .select({ id: ProjectTable.id, name: ProjectTable.name, worktree: ProjectTable.worktree })
         .from(ProjectTable)
         .where(inArray(ProjectTable.id, ids))

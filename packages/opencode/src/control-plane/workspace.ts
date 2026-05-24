@@ -163,8 +163,7 @@ export const sessionRestore = fn(SessionRestoreInput, async (input) => {
     })
 
     const rows = Database.use((db) =>
-      db
-        .select({
+      (db.select as any)({
           id: EventTable.id,
           aggregateID: EventTable.aggregate_id,
           seq: EventTable.seq,
@@ -311,7 +310,7 @@ export const get = fn(WorkspaceID.zod, async (id) => {
 
 export const remove = fn(WorkspaceID.zod, async (id) => {
   const sessions = Database.use((db) =>
-    db.select({ id: SessionTable.id }).from(SessionTable).where(eq(SessionTable.workspace_id, id)).all(),
+    (db as any).select({ id: SessionTable.id }).from(SessionTable).where(eq(SessionTable.workspace_id, id)).all(),
   )
   for (const session of sessions) {
     await AppRuntime.runPromise(Session.Service.use((svc) => svc.remove(session.id)))
@@ -368,8 +367,7 @@ function synced(state: Record<string, number>) {
 
   const done = Object.fromEntries(
     Database.use((db) =>
-      db
-        .select({
+      (db.select as any)({
           id: EventSequenceTable.aggregate_id,
           seq: EventSequenceTable.seq,
         })
@@ -433,7 +431,7 @@ async function connectSSE(url: URL | string, headers: HeadersInit | undefined, s
 
 async function syncHistory(space: Info, url: URL | string, headers: HeadersInit | undefined, signal: AbortSignal) {
   const sessionIDs = Database.use((db) =>
-    db
+    (db as any)
       .select({ id: SessionTable.id })
       .from(SessionTable)
       .where(eq(SessionTable.workspace_id, space.id))
@@ -487,11 +485,6 @@ async function syncHistory(space: Info, url: URL | string, headers: HeadersInit 
         )
       }
     },
-  })
-
-  log.info("workspace history synced", {
-    workspaceID: space.id,
-    events: events.length,
   })
 }
 
@@ -599,7 +592,7 @@ function stopSync(id: WorkspaceID) {
 
 export function startWorkspaceSyncing(projectID: ProjectID) {
   const spaces = Database.use((db) =>
-    db
+    (db as any)
       .select({ workspace: WorkspaceTable })
       .from(WorkspaceTable)
       .innerJoin(SessionTable, eq(SessionTable.workspace_id, WorkspaceTable.id))
@@ -607,7 +600,8 @@ export function startWorkspaceSyncing(projectID: ProjectID) {
       .all(),
   )
 
-  for (const row of new Map(spaces.map((row) => [row.workspace.id, row.workspace])).values()) {
+  const workspaces = Array.from(new Map(spaces.map((row) => [row.workspace.id, row.workspace])).values()) as (typeof WorkspaceTable.$inferSelect)[]
+  for (const row of workspaces) {
     void startSync(fromRow(row))
   }
 }

@@ -1,12 +1,13 @@
 type Definition = {
-  [method: string]: (input: any) => any
+  [method: string]: (input: unknown) => unknown
 }
 
 export function listen(rpc: Definition) {
   onmessage = async (evt) => {
-    const parsed = JSON.parse(evt.data)
+    let parsed: Record<string, unknown>
+    try { parsed = JSON.parse(evt.data) } catch { return }
     if (parsed.type === "rpc.request") {
-      const result = await rpc[parsed.method](parsed.input)
+      const result = await rpc[parsed.method as string]?.(parsed.input)
       postMessage(JSON.stringify({ type: "rpc.result", result, id: parsed.id }))
     }
   }
@@ -18,22 +19,23 @@ export function emit(event: string, data: unknown) {
 
 export function client<T extends Definition>(target: {
   postMessage: (data: string) => void | null
-  onmessage: ((this: Worker, ev: MessageEvent<any>) => any) | null
+  onmessage: ((this: Worker, ev: MessageEvent) => unknown) | null
 }) {
-  const pending = new Map<number, (result: any) => void>()
-  const listeners = new Map<string, Set<(data: any) => void>>()
+  const pending = new Map<number, (result: unknown) => void>()
+  const listeners = new Map<string, Set<(data: unknown) => void>>()
   let id = 0
   target.onmessage = async (evt) => {
-    const parsed = JSON.parse(evt.data)
+    let parsed: Record<string, unknown>
+    try { parsed = JSON.parse(evt.data) } catch { return }
     if (parsed.type === "rpc.result") {
-      const resolve = pending.get(parsed.id)
+      const resolve = pending.get(parsed.id as number)
       if (resolve) {
         resolve(parsed.result)
-        pending.delete(parsed.id)
+        pending.delete(parsed.id as number)
       }
     }
     if (parsed.type === "rpc.event") {
-      const handlers = listeners.get(parsed.event)
+      const handlers = listeners.get(parsed.event as string)
       if (handlers) {
         for (const handler of handlers) {
           handler(parsed.data)

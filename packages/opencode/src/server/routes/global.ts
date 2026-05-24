@@ -128,7 +128,7 @@ export const GlobalRoutes = lazy(() =>
         c.header("X-Content-Type-Options", "nosniff")
 
         return streamEvents(c, (q) => {
-          async function handler(event: any) {
+          async function handler(event: unknown) {
             q.push(JSON.stringify(event))
           }
           GlobalBus.on("event", handler)
@@ -271,7 +271,8 @@ export const GlobalRoutes = lazy(() =>
           ),
         )
         if (!result.success) {
-          return c.json({ success: false, error: result.error }, result.status)
+          const res = result as { success: false; error: string; status: number }
+          return c.json({ success: false, error: res.error }, res.status as 200)
         }
         const target = result.version
         GlobalBus.emit("event", {

@@ -169,7 +169,7 @@ export const TuiRoutes = lazy(() =>
       }),
       async (c) => {
         await Bus.publish(TuiEvent.CommandExecute, {
-          command: "session.list",
+          command: "theme.list",
         })
         return c.json(true)
       },
@@ -268,7 +268,6 @@ export const TuiRoutes = lazy(() =>
       async (c) => {
         const command = c.req.valid("json").command
         await Bus.publish(TuiEvent.CommandExecute, {
-          // @ts-expect-error
           command: {
             session_new: "session.new",
             session_share: "session.share",

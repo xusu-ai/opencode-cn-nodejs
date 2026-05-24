@@ -4,6 +4,7 @@ import type { Argv } from "yargs"
 import { ConfigPaths } from "../../config"
 import { Global } from "../../global"
 import { installPlugin, patchPluginConfig, readPluginManifest } from "../../plugin/install"
+import type { Target, PatchItem } from "../../plugin/install"
 import { resolvePluginTarget } from "../../plugin/shared"
 import { Instance } from "../../project/instance"
 import { errorMessage } from "../../util/error"
@@ -75,10 +76,11 @@ export function createPlugTask(input: PlugInput, dep: PlugDeps = defaultPlugDeps
   return async (ctx: PlugCtx) => {
     const install = dep.spinner()
     install.start("Installing plugin package...")
-    const target = await installPlugin(mod, dep)
-    if (!target.ok) {
+    const installResult = await installPlugin(mod, dep)
+    if (!installResult.ok) {
       install.stop("Install failed", 1)
       dep.log.error(`Could not install "${mod}"`)
+      const target = installResult as { ok: false; error: unknown }
       const hit = cause(target.error) ?? target.error
       if (hit instanceof Process.RunFailedError) {
         const lines = hit.stderr
@@ -99,12 +101,14 @@ export function createPlugTask(input: PlugInput, dep: PlugDeps = defaultPlugDeps
       }
       return false
     }
+    const target = installResult as { ok: true; target: string }
     install.stop("Plugin package ready")
 
     const inspect = dep.spinner()
     inspect.start("Reading plugin manifest...")
-    const manifest = await readPluginManifest(target.target)
-    if (!manifest.ok) {
+    const manifestResult = await readPluginManifest(target.target)
+    if (!manifestResult.ok) {
+      const manifest = manifestResult as { ok: false; code: string; file?: string; error?: unknown }
       if (manifest.code === "manifest_read_failed") {
         inspect.stop("Manifest read failed", 1)
         dep.log.error(`Installed "${mod}" but failed to read ${manifest.file}`)
@@ -124,6 +128,7 @@ export function createPlugTask(input: PlugInput, dep: PlugDeps = defaultPlugDeps
       inspect.stop("Manifest read failed", 1)
       return false
     }
+    const manifest = manifestResult as { ok: true; targets: Target[] }
 
     inspect.stop(
       `Detected ${manifest.targets.map((item) => item.kind).join(" + ")} target${manifest.targets.length === 1 ? "" : "s"}`,
@@ -131,7 +136,7 @@ export function createPlugTask(input: PlugInput, dep: PlugDeps = defaultPlugDeps
 
     const patch = dep.spinner()
     patch.start("Updating plugin config...")
-    const out = await patchPluginConfig(
+    const patchResult = await patchPluginConfig(
       {
         spec: mod,
         targets: manifest.targets,
@@ -144,7 +149,8 @@ export function createPlugTask(input: PlugInput, dep: PlugDeps = defaultPlugDeps
       },
       dep,
     )
-    if (!out.ok) {
+    if (!patchResult.ok) {
+      const out = patchResult as { ok: false; code: string; kind?: "server" | "tui"; file?: string; parse?: string; line?: number; col?: number; error?: unknown }
       if (out.code === "invalid_json") {
         patch.stop(`Failed updating ${out.kind} config`, 1)
         dep.log.error(`Invalid JSON in ${out.file} (${out.parse} at line ${out.line}, column ${out.col})`)
@@ -156,6 +162,7 @@ export function createPlugTask(input: PlugInput, dep: PlugDeps = defaultPlugDeps
       dep.log.error(errorMessage(out.error))
       return false
     }
+    const out = patchResult as { ok: true; dir: string; items: PatchItem[] }
     patch.stop("Plugin config updated")
     for (const item of out.items) {
       if (item.mode === "noop") {

@@ -1,7 +1,6 @@
 import type { NamedError } from "@opencode-ai/shared/util/error"
 import { Cause, Clock, Duration, Effect, Schedule } from "effect"
 import { MessageV2 } from "./message-v2"
-import { iife } from "@/util/iife"
 
 export type Err = ReturnType<NamedError["toObject"]>
 
@@ -76,18 +75,13 @@ export function retryable(error: Err) {
     }
   }
 
-  const json = iife(() => {
+  const json = (() => {
     try {
-      if (typeof error.data?.message === "string") {
-        const parsed = JSON.parse(error.data.message)
-        return parsed
-      }
-
-      return JSON.parse(error.data.message)
+      return typeof error.data?.message === "string" ? JSON.parse(error.data.message) : undefined
     } catch {
       return undefined
     }
-  })
+  })()
   if (!json || typeof json !== "object") return undefined
   const code = typeof json.code === "string" ? json.code : ""
 

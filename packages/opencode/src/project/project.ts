@@ -172,7 +172,7 @@ export const layer: Layer.Layer<
       // Phase 1: discover git info
       type DiscoveryResult = { id: ProjectID; worktree: string; sandbox: string; vcs: Info["vcs"] }
 
-      const data: DiscoveryResult = yield* Effect.gen(function* () {
+      const data: DiscoveryResult = (yield* Effect.gen(function* () {
         const dotgitMatches = yield* fs.up({ targets: [".git"], start: directory }).pipe(Effect.orDie)
         const dotgit = dotgitMatches[0]
 
@@ -191,7 +191,7 @@ export const layer: Layer.Layer<
 
         if (!gitBinary) {
           return {
-            id: id ?? ProjectID.global,
+            id: (id ?? ProjectID.global) as ProjectID,
             worktree: sandbox,
             sandbox,
             vcs: fakeVcs,
@@ -201,7 +201,7 @@ export const layer: Layer.Layer<
         const commonDir = yield* git(["rev-parse", "--git-common-dir"], { cwd: sandbox })
         if (commonDir.code !== 0) {
           return {
-            id: id ?? ProjectID.global,
+            id: (id ?? ProjectID.global) as ProjectID,
             worktree: sandbox,
             sandbox,
             vcs: fakeVcs,
@@ -237,7 +237,7 @@ export const layer: Layer.Layer<
         const topLevel = yield* git(["rev-parse", "--show-toplevel"], { cwd: sandbox })
         if (topLevel.code !== 0) {
           return {
-            id,
+            id: id as ProjectID,
             worktree: sandbox,
             sandbox,
             vcs: fakeVcs,
@@ -245,8 +245,8 @@ export const layer: Layer.Layer<
         }
         sandbox = resolveGitPath(sandbox, topLevel.text.trim())
 
-        return { id, sandbox, worktree, vcs: "git" as const }
-      })
+        return { id: id as ProjectID, sandbox, worktree, vcs: "git" as const }
+      })) as any
 
       // Phase 2: upsert
       const row = yield* db((d) => d.select().from(ProjectTable).where(eq(ProjectTable.id, data.id)).get())

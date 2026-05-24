@@ -20,11 +20,8 @@ export function todayTimeOrDateTime(input: number): string {
   const isToday =
     date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate()
 
-  if (isToday) {
-    return time(input)
-  } else {
-    return datetime(input)
-  }
+  if (isToday) return time(input)
+  return datetime(input)
 }
 
 export function number(num: number): string {
@@ -53,8 +50,8 @@ export function duration(input: number) {
     const minutes = Math.floor((input % 3600000) / 60000)
     return `${hours}h ${minutes}m`
   }
-  const hours = Math.floor(input / 3600000)
-  const days = Math.floor((input % 3600000) / 86400000)
+  const days = Math.floor(input / 86400000)
+  const hours = Math.floor((input % 86400000) / 3600000)
   return `${days}d ${hours}h`
 }
 

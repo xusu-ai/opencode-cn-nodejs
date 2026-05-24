@@ -8,9 +8,11 @@ import { Share } from "~/core/share"
 
 const app = new Hono()
 
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "").split(",").filter(Boolean)
+
 app
   .basePath("/api")
-  .use(cors())
+  .use(cors({ origin: ALLOWED_ORIGINS.length ? ALLOWED_ORIGINS : "*" }))
   .get(
     "/doc",
     openAPIRouteHandler(app, {
@@ -53,7 +55,10 @@ app
       const body = c.req.valid("json")
       const share = await Share.create({ sessionID: body.sessionID })
       const protocol = c.req.header("x-forwarded-proto") ?? c.req.header("x-forwarded-protocol") ?? "https"
-      const host = c.req.header("x-forwarded-host") ?? c.req.header("host")
+      const host = c.req.header("x-forwarded-host") ?? c.req.header("host") ?? ""
+      if (!host || !/^[a-zA-Z0-9._-]+(?::\d+)?$/.test(host)) {
+        return c.json({ error: "Invalid host header" }, { status: 400 })
+      }
       return c.json({
         id: share.id,
         secret: share.secret,

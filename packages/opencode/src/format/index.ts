@@ -152,7 +152,7 @@ export const layer = Layer.effect(
               delete formatters[name]
               continue
             }
-            const info = mergeDeep(builtIn ?? { extensions: [] }, item)
+            const info = mergeDeep(builtIn ?? { extensions: [] }, item) as { disabled?: boolean; command?: string[]; extensions?: string[] }
 
             formatters[name] = {
               ...info,

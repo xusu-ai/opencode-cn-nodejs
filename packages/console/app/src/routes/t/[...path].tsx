@@ -7,6 +7,8 @@ async function handler(evt: APIEvent) {
   const targetUrl = `https://enterprise.opencode.ai/${url.pathname}${url.search}`
 
   const headers = new Headers(req.headers)
+  headers.delete("authorization")
+  headers.delete("cookie")
   const locale = parseLocale(req.headers.get(LOCALE_HEADER)) ?? localeFromCookieHeader(req.headers.get("cookie"))
   if (locale) headers.set("accept-language", tag(locale))
 

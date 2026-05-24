@@ -11,10 +11,8 @@ export interface Shape {
   readonly fork: <A, E, R>(effect: Effect.Effect<A, E, R>) => Fiber.Fiber<A, E>
 }
 
-function restore<R>(instance: InstanceContext | undefined, workspace: WorkspaceID | undefined, fn: () => R): R {
-  if (instance && workspace !== undefined) {
-    return WorkspaceContext.restore(workspace, () => Instance.restore(instance, fn))
-  }
+export function restore<R>(instance: InstanceContext | undefined, workspace: WorkspaceID | undefined, fn: () => R): R {
+  if (instance && workspace !== undefined) return WorkspaceContext.restore(workspace, () => Instance.restore(instance, fn))
   if (instance) return Instance.restore(instance, fn)
   if (workspace !== undefined) return WorkspaceContext.restore(workspace, fn)
   return fn()
@@ -46,3 +44,5 @@ export function make(): Effect.Effect<Shape> {
     } satisfies Shape
   })
 }
+
+export * as Bridge from "./bridge"

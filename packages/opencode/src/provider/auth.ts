@@ -158,6 +158,7 @@ export const layer: Layer.Layer<Service, never, Auth.Service | Plugin.Service> =
                 message: prompt.message,
                 placeholder: prompt.placeholder,
                 when: prompt.when,
+                validate: (prompt as any).validate as ((input: string) => string | undefined) | undefined,
               }
             }),
           })),

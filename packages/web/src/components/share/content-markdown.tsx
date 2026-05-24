@@ -10,8 +10,9 @@ const markedWithShiki = marked.use(
   {
     renderer: {
       link({ href, title, text }) {
-        const titleAttr = title ? ` title="${title}"` : ""
-        return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`
+        const safeHref = href?.replace(/"/g, "&quot;") ?? ""
+        const safeTitle = title ? ` title="${title.replace(/"/g, "&quot;")}"` : ""
+        return `<a href="${safeHref}"${safeTitle} target="_blank" rel="noopener noreferrer">${text}</a>`
       },
     },
   },

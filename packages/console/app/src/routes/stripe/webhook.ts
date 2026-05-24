@@ -357,7 +357,9 @@ export async function POST(input: APIEvent) {
     .then((message) => {
       return Response.json({ message: message ?? "done" }, { status: 200 })
     })
-    .catch((error: any) => {
-      return Response.json({ message: error.message }, { status: 500 })
+    .catch((error: unknown) => {
+      const msg = error instanceof Error ? error.message : "Internal server error"
+      console.error("[stripe] webhook error:", msg)
+      return Response.json({ message: "Internal server error" }, { status: 500 })
     })
 }

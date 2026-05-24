@@ -107,7 +107,7 @@ export const rpc = {
   async checkUpgrade(input: { directory: string }) {
     await Instance.provide({
       directory: input.directory,
-      init: () => AppRuntime.runPromise(InstanceBootstrap),
+      init: () => AppRuntime.runPromise(InstanceBootstrap as never),
       fn: async () => {
         await upgrade().catch(() => {})
       },

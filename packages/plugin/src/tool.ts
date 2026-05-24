@@ -16,7 +16,7 @@ export type ToolContext = {
    */
   worktree: string
   abort: AbortSignal
-  metadata(input: { title?: string; metadata?: { [key: string]: any } }): void
+  metadata(input: { title?: string; metadata?: Record<string, unknown> }): void
   ask(input: AskInput): Effect.Effect<void>
 }
 
@@ -24,10 +24,10 @@ type AskInput = {
   permission: string
   patterns: string[]
   always: string[]
-  metadata: { [key: string]: any }
+  metadata: Record<string, unknown>
 }
 
-export type ToolResult = string | { output: string; metadata?: { [key: string]: any } }
+export type ToolResult = string | { output: string; metadata?: Record<string, unknown> }
 
 export function tool<Args extends z.ZodRawShape>(input: {
   description: string

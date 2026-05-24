@@ -177,7 +177,7 @@ describe("Workspace.sessionRestore", () => {
           }
           const rows = Database.use((db) =>
             db
-              .select({ seq: EventTable.seq })
+              .select()
               .from(EventTable)
               .where(eq(EventTable.aggregate_id, session.id))
               .orderBy(asc(EventTable.seq))

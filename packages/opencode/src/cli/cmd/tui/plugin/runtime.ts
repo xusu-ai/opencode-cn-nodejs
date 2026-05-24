@@ -29,6 +29,7 @@ import {
 import { PluginLoader } from "@/plugin/loader"
 import { PluginMeta } from "@/plugin/meta"
 import { installPlugin as installModulePlugin, patchPluginConfig, readPluginManifest } from "@/plugin/install"
+import type { Target, PatchItem } from "@/plugin/install"
 import { hasTheme, upsertTheme } from "../context/theme"
 import { Global } from "@/global"
 import { Filesystem } from "@/util"
@@ -206,7 +207,7 @@ function createThemeInstaller(
       if (text === undefined) return
 
       const fail = Symbol()
-      const data = await Promise.resolve(text)
+      const data = await Promise.resolve(text as string)
         .then((x) => JSON.parse(x))
         .catch((error) => {
           log.warn("failed to parse tui plugin theme", { path: spec, theme: src, error })
@@ -220,7 +221,7 @@ function createThemeInstaller(
       }
 
       if (exists || !(await Filesystem.exists(dest))) {
-        await Filesystem.write(dest, text).catch((error) => {
+        await Filesystem.write(dest, text as string).catch((error) => {
           log.warn("failed to persist tui plugin theme", { path: spec, theme: src, dest, error })
         })
       }
@@ -854,18 +855,21 @@ async function installPluginBySpec(
     }
   }
 
-  const install = await installModulePlugin(spec)
-  if (!install.ok) {
-    const out = installDetail(install.error)
+  const installResult = await installModulePlugin(spec)
+  if (!installResult.ok) {
+    const inst = installResult as { ok: false; error: unknown }
+    const out = installDetail(inst.error)
     return {
       ok: false,
       message: out.message,
       missing: out.missing,
     }
   }
+  const install = installResult as { ok: true; target: string }
 
-  const manifest = await readPluginManifest(install.target)
-  if (!manifest.ok) {
+  const manifestResult = await readPluginManifest(install.target)
+  if (!manifestResult.ok) {
+    const manifest = manifestResult as { ok: false; code: string; file?: string }
     if (manifest.code === "manifest_no_targets") {
       return {
         ok: false,
@@ -878,8 +882,9 @@ async function installPluginBySpec(
       message: `Installed "${spec}" but failed to read ${manifest.file}`,
     }
   }
+  const manifest = manifestResult as { ok: true; targets: Target[] }
 
-  const patch = await patchPluginConfig({
+  const patchResult = await patchPluginConfig({
     spec,
     targets: manifest.targets,
     global,
@@ -887,7 +892,8 @@ async function installPluginBySpec(
     worktree: dir.worktree,
     directory: dir.directory,
   })
-  if (!patch.ok) {
+  if (!patchResult.ok) {
+    const patch = patchResult as { ok: false; code: string; file?: string; parse?: string; line?: number; col?: number; error?: unknown }
     if (patch.code === "invalid_json") {
       return {
         ok: false,
@@ -900,6 +906,7 @@ async function installPluginBySpec(
       message: errorMessage(patch.error),
     }
   }
+  const patch = patchResult as { ok: true; dir: string; items: PatchItem[] }
 
   const tui = manifest.targets.find((item) => item.kind === "tui")
   if (tui) {

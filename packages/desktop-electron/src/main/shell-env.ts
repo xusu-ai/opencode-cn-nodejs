@@ -79,10 +79,3 @@ export function loadShellEnv(shell: string) {
   console.warn(`[server] Falling back to app environment: ${shell}`)
   return null
 }
-
-export function mergeShellEnv(shell: Record<string, string> | null, env: Record<string, string>) {
-  return {
-    ...shell,
-    ...env,
-  }
-}

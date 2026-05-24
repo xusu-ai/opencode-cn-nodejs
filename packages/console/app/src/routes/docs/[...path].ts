@@ -10,6 +10,8 @@ async function handler(evt: APIEvent) {
   const targetUrl = `https://${host}${docs(locale, url.pathname)}${url.search}`
 
   const headers = new Headers(req.headers)
+  headers.delete("authorization")
+  headers.delete("cookie")
   headers.set("accept-language", tag(locale))
 
   const response = await fetch(targetUrl, {

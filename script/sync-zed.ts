@@ -38,7 +38,7 @@ async function main() {
   const workDir = join(tmpdir(), `zed-extensions-${Date.now()}`)
   console.log(`📁 Working in ${workDir}`)
 
-  await $`git clone https://x-access-token:${token}@github.com/${FORK_REPO}.git ${workDir}`
+  await $`git clone https://oauth2:${token}@github.com/${FORK_REPO}.git ${workDir}`
   process.chdir(workDir)
 
   // Configure git identity

@@ -13,6 +13,7 @@ import { useProject } from "@tui/context/project"
 import { useSync } from "@tui/context/sync"
 import { useEvent } from "@tui/context/event"
 import { MessageID, PartID } from "@/session/schema"
+import type { SessionStatus } from "@/session/status"
 import { createStore, produce, unwrap } from "solid-js/store"
 import { useKeybind } from "@tui/context/keybind"
 import { usePromptHistory, type PromptInfo } from "./history"
@@ -431,7 +432,7 @@ export function Prompt(props: PromptProps) {
             parts: updatedNonTextParts,
           })
           restoreExtmarksFromParts(updatedNonTextParts)
-          input.cursorOffset = Bun.stringWidth(content)
+          input.cursorOffset = content.length
         },
       },
       {
@@ -1333,25 +1334,26 @@ export function Prompt(props: PromptProps) {
                       const s = status()
                       if (s.type !== "retry") return
                       return s
-                    })
+                    }) as () => { type: "retry"; attempt: number; message: string; next: number } | undefined
+
                     const message = createMemo(() => {
-                      const r = retry()
-                      if (!r) return
-                      if (r.message.includes("exceeded your current quota") && r.message.includes("gemini"))
+                      const info = retry()
+                      if (!info) return
+                      if (info.message.includes("exceeded your current quota") && info.message.includes("gemini"))
                         return t("tui.prompt.geminiTooHot")
-                      if (r.message.length > 80) return r.message.slice(0, 80) + "..."
-                      return r.message
+                      if (info.message.length > 80) return info.message.slice(0, 80) + "..."
+                      return info.message
                     })
                     const isTruncated = createMemo(() => {
-                      const r = retry()
-                      if (!r) return false
-                      return r.message.length > 120
+                      const info = retry()
+                      if (!info) return false
+                      return info.message.length > 120
                     })
                     const [seconds, setSeconds] = createSignal(0)
                     onMount(() => {
                       const timer = setInterval(() => {
-                        const next = retry()?.next
-                        if (next) setSeconds(Math.round((next - Date.now()) / 1000))
+                        const info = retry()
+                        if (info) setSeconds(Math.round((info.next - Date.now()) / 1000))
                       }, 1000)
 
                       onCleanup(() => {
@@ -1359,21 +1361,21 @@ export function Prompt(props: PromptProps) {
                       })
                     })
                     const handleMessageClick = () => {
-                      const r = retry()
-                      if (!r) return
+                      const info = retry()
+                      if (!info) return
                       if (isTruncated()) {
-                        void DialogAlert.show(dialog, t("tui.prompt.retryError"), r.message)
+                        void DialogAlert.show(dialog, t("tui.prompt.retryError"), info.message)
                       }
                     }
 
                     const retryText = () => {
-                      const r = retry()
-                      if (!r) return ""
+                      const info = retry()
+                      if (!info) return ""
                       const baseMessage = message()
                       const truncatedHint = isTruncated() ? " " + t("tui.prompt.clickToExpand") : ""
                       const duration = formatDuration(seconds())
-                      const retryInfo = ` [retrying ${duration ? `in ${duration} ` : ""}attempt #${r.attempt}]`
-                      return baseMessage + truncatedHint + retryInfo
+                      const retryInfoStr = ` [retrying ${duration ? `in ${duration} ` : ""}attempt #${info.attempt}]`
+                      return baseMessage + truncatedHint + retryInfoStr
                     }
 
                     return (

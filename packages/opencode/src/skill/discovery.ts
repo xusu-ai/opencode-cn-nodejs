@@ -81,7 +81,7 @@ export const layer: Layer.Layer<Service, never, AppFileSystem.Service | Path.Pat
         })
 
         const dirs = yield* Effect.forEach(
-          list,
+          list as { name: string; files: string[] }[],
           (skill) =>
             Effect.gen(function* () {
               const root = path.join(cache, skill.name)

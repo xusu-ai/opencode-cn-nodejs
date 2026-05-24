@@ -633,7 +633,7 @@ export function Session() {
       onSelect: (dialog) => {
         batch(() => {
           const isVisible = sidebarVisible()
-          setSidebar(() => (isVisible ? "hide" : "auto"))
+          setSidebar((isVisible ? "hide" : "auto") as any)
           setSidebarOpen(!isVisible)
         })
         dialog.clear()
@@ -658,7 +658,7 @@ export function Session() {
         aliases: ["toggle-timestamps"],
       },
       onSelect: (dialog) => {
-        setTimestamps((prev) => (prev === "show" ? "hide" : "show"))
+        setTimestamps(((prev: string) => (prev === "show" ? "hide" : "show")) as any)
         dialog.clear()
       },
     },
@@ -672,7 +672,7 @@ export function Session() {
         aliases: ["toggle-thinking"],
       },
       onSelect: (dialog) => {
-        setShowThinking((prev) => !prev)
+        setShowThinking(((prev: boolean) => !prev) as any)
         dialog.clear()
       },
     },
@@ -682,7 +682,7 @@ export function Session() {
       keybind: "tool_details",
       category: t("tui.category.session"),
       onSelect: (dialog) => {
-        setShowDetails((prev) => !prev)
+        setShowDetails(((prev: boolean) => !prev) as any)
         dialog.clear()
       },
     },
@@ -692,7 +692,7 @@ export function Session() {
       keybind: "scrollbar_toggle",
       category: t("tui.category.session"),
       onSelect: (dialog) => {
-        setShowScrollbar((prev) => !prev)
+        setShowScrollbar(((prev: boolean) => !prev) as any)
         dialog.clear()
       },
     },
@@ -701,7 +701,7 @@ export function Session() {
       value: "session.toggle.generic_tool_output",
       category: t("tui.category.session"),
       onSelect: (dialog) => {
-        setShowGenericToolOutput((prev) => !prev)
+        setShowGenericToolOutput(((prev: boolean) => !prev) as any)
         dialog.clear()
       },
     },

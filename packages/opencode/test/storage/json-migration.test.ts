@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test"
 import { Database } from "bun:sqlite"
-import { drizzle, SQLiteBunDatabase } from "drizzle-orm/bun-sqlite"
+import { drizzle } from "drizzle-orm/bun-sqlite"
 import { migrate } from "drizzle-orm/bun-sqlite/migrator"
 import path from "path"
 import fs from "fs/promises"
@@ -99,7 +99,7 @@ function createTestDb() {
 describe("JSON to SQLite migration", () => {
   let storageDir: string
   let sqlite: Database
-  let db: SQLiteBunDatabase
+  let db: ReturnType<typeof drizzle>
 
   beforeEach(async () => {
     storageDir = await setupStorageDir()
@@ -121,7 +121,7 @@ describe("JSON to SQLite migration", () => {
       sandboxes: ["/test/sandbox"],
     })
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.projects).toBe(1)
 
@@ -145,7 +145,7 @@ describe("JSON to SQLite migration", () => {
       }),
     )
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.projects).toBe(1)
 
@@ -165,7 +165,7 @@ describe("JSON to SQLite migration", () => {
       commands: { start: "npm run dev" },
     })
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.projects).toBe(1)
 
@@ -185,7 +185,7 @@ describe("JSON to SQLite migration", () => {
       sandboxes: [],
     })
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.projects).toBe(1)
 
@@ -215,7 +215,7 @@ describe("JSON to SQLite migration", () => {
       share: { url: "https://example.com/share" },
     })
 
-    await JsonMigration.run(db)
+    await JsonMigration.run(db as any)
 
     const sessions = db.select().from(SessionTable).all()
     expect(sessions.length).toBe(1)
@@ -245,7 +245,7 @@ describe("JSON to SQLite migration", () => {
       JSON.stringify({ ...fixtures.part }),
     )
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.messages).toBe(1)
     expect(stats?.parts).toBe(1)
@@ -284,7 +284,7 @@ describe("JSON to SQLite migration", () => {
       }),
     )
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.messages).toBe(1)
     expect(stats?.parts).toBe(1)
@@ -325,7 +325,7 @@ describe("JSON to SQLite migration", () => {
       }),
     )
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.messages).toBe(1)
 
@@ -362,7 +362,7 @@ describe("JSON to SQLite migration", () => {
       }),
     )
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.parts).toBe(1)
 
@@ -386,7 +386,7 @@ describe("JSON to SQLite migration", () => {
       }),
     )
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.sessions).toBe(0)
   })
@@ -414,7 +414,7 @@ describe("JSON to SQLite migration", () => {
       time: { created: 1700000000000, updated: 1700000001000 },
     })
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.sessions).toBe(1)
 
@@ -445,7 +445,7 @@ describe("JSON to SQLite migration", () => {
       }),
     )
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.sessions).toBe(1)
 
@@ -463,8 +463,8 @@ describe("JSON to SQLite migration", () => {
       sandboxes: [],
     })
 
-    await JsonMigration.run(db)
-    await JsonMigration.run(db)
+    await JsonMigration.run(db as any)
+    await JsonMigration.run(db as any)
 
     const projects = db.select().from(ProjectTable).all()
     expect(projects.length).toBe(1) // Still only 1 due to onConflictDoNothing
@@ -498,7 +498,7 @@ describe("JSON to SQLite migration", () => {
       ]),
     )
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.todos).toBe(2)
 
@@ -530,7 +530,7 @@ describe("JSON to SQLite migration", () => {
       ]),
     )
 
-    await JsonMigration.run(db)
+    await JsonMigration.run(db as any)
 
     const todos = db.select().from(TodoTable).orderBy(TodoTable.position).all()
 
@@ -559,7 +559,7 @@ describe("JSON to SQLite migration", () => {
     ]
     await Bun.write(path.join(storageDir, "permission", "proj_test123abc.json"), JSON.stringify(permissionData))
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.permissions).toBe(1)
 
@@ -588,7 +588,7 @@ describe("JSON to SQLite migration", () => {
       }),
     )
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats?.shares).toBe(1)
 
@@ -603,7 +603,7 @@ describe("JSON to SQLite migration", () => {
   test("returns empty stats when storage directory does not exist", async () => {
     await fs.rm(storageDir, { recursive: true, force: true })
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats.projects).toBe(0)
     expect(stats.sessions).toBe(0)
@@ -624,7 +624,7 @@ describe("JSON to SQLite migration", () => {
     })
     await Bun.write(path.join(storageDir, "project", "broken.json"), "{ invalid json")
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats.projects).toBe(1)
     expect(stats.errors.some((x) => x.includes("failed to read") && x.includes("broken.json"))).toBe(true)
@@ -652,7 +652,7 @@ describe("JSON to SQLite migration", () => {
       ]),
     )
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
     expect(stats.todos).toBe(2)
 
     const todos = db.select().from(TodoTable).orderBy(TodoTable.position).all()
@@ -699,7 +699,7 @@ describe("JSON to SQLite migration", () => {
       JSON.stringify({ id: "share_missing", secret: "secret", url: "https://missing.example.com" }),
     )
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     expect(stats.todos).toBe(1)
     expect(stats.permissions).toBe(1)
@@ -807,7 +807,7 @@ describe("JSON to SQLite migration", () => {
     )
     await Bun.write(path.join(storageDir, "session_share", "ses_broken.json"), "{ nope")
 
-    const stats = await JsonMigration.run(db)
+    const stats = await JsonMigration.run(db as any)
 
     // Projects: proj_test123abc (valid), proj_missing_id (now derives id from filename)
     // Sessions: ses_test456def (valid), ses_missing_project (now uses dir path),

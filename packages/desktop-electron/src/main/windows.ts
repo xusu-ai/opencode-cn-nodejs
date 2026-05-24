@@ -191,7 +191,7 @@ function wireZoom(win: BrowserWindow) {
   })
 }
 
-function upsertKeyValue(obj: Record<string, any>, keyToChange: string, value: any) {
+function upsertKeyValue(obj: Record<string, unknown>, keyToChange: string, value: unknown) {
   const keyToChangeLower = keyToChange.toLowerCase()
   for (const key of Object.keys(obj)) {
     if (key.toLowerCase() === keyToChangeLower) {

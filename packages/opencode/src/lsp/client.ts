@@ -347,8 +347,9 @@ export async function create(input: { serverID: string; server: LSPServer.Handle
       handled = true
       matched = true
     }
-    for (const [uri, related] of Object.entries(report.relatedDocuments ?? {})) {
+    for (const [uri, raw] of Object.entries(report.relatedDocuments ?? {})) {
       const relatedPath = getFilePath(uri)
+      const related = raw as DocumentDiagnosticReport
       if (!relatedPath || !Array.isArray(related.items)) continue
       push(relatedPath, related.items)
       handled = true

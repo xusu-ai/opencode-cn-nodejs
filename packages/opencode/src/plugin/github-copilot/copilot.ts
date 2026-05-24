@@ -151,7 +151,6 @@ export async function CopilotAuthPlugin(input: PluginInput): Promise<Hooks> {
               "x-initiator": isAgent ? "agent" : "user",
               ...(init?.headers as Record<string, string>),
               "User-Agent": `opencode/${InstallationVersion}`,
-              Authorization: `Bearer ${info.refresh}`,
               "Openai-Intent": "conversation-edits",
             }
 
@@ -161,6 +160,8 @@ export async function CopilotAuthPlugin(input: PluginInput): Promise<Hooks> {
 
             delete headers["x-api-key"]
             delete headers["authorization"]
+
+            headers["Authorization"] = `Bearer ${info.refresh}`
 
             return fetch(request, {
               ...init,

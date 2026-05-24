@@ -3,7 +3,7 @@
   "name": "@opencode-ai/console-resource",
   "license": "MIT",
   "dependencies": {
-    "@cloudflare/workers-types": "catalog:"
+    "@cloudflare/workers-types": "4.20251008.0"
   },
   "exports": {
     ".": {
@@ -14,9 +14,9 @@
     }
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "catalog:",
+    "@cloudflare/workers-types": "4.20251008.0",
     "@tsconfig/node22": "22.0.2",
-    "@types/node": "catalog:",
+    "@types/node": "22.13.9",
     "cloudflare": "5.2.0"
   }
 }

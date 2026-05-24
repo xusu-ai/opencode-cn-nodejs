@@ -1,0 +1,13 @@
+packages:
+  - 'packages/opencode'
+  - 'packages/plugin'
+  - 'packages/script'
+  - 'packages/shared'
+  - 'packages/sdk/js'
+allowBuilds:
+  '@parcel/watcher': true
+  aws-sdk: true
+  esbuild: true
+  protobufjs: true
+  tree-sitter-bash: true
+  tree-sitter-powershell: true

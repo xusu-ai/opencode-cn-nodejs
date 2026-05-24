@@ -146,23 +146,25 @@ export namespace PluginLoader {
 
     const resolved = await resolve(plan, kind)
     if (!resolved.ok) {
-      if (resolved.stage === "missing") {
+      const err = resolved as { ok: false; stage: string; value?: { message: string }; error?: unknown }
+      if (err.stage === "missing") {
         // Missing entrypoints are handled separately so callers can still inspect package metadata,
         // for example to load theme files from a tui plugin package that has no code entrypoint.
-        if (missing) {
-          const value = await missing(resolved.value, candidate.origin, retry)
+        if (missing && err.value) {
+          const value = await missing(err.value as Missing, candidate.origin, retry)
           if (value !== undefined) return value
         }
-        report?.missing?.(candidate, retry, resolved.value.message, resolved.value)
+        if (err.value) report?.missing?.(candidate, retry, err.value.message, err.value as Missing)
         return
       }
-      report?.error?.(candidate, retry, resolved.stage, resolved.error)
+      report?.error?.(candidate, retry, err.stage as "install" | "entry" | "compatibility", err.error)
       return
     }
+    const resolvedOk = resolved as { ok: true; value: Resolved }
 
-    const loaded = await load(resolved.value)
+    const loaded = await load(resolvedOk.value)
     if (!loaded.ok) {
-      report?.error?.(candidate, retry, "load", loaded.error, resolved.value)
+      report?.error?.(candidate, retry, "load", (loaded as { ok: false; error: unknown }).error, resolvedOk.value)
       return
     }
 

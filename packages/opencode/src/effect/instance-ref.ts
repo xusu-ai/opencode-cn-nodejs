@@ -9,3 +9,4 @@ export const InstanceRef = Context.Reference<InstanceContext | undefined>("~open
 export const WorkspaceRef = Context.Reference<WorkspaceID | undefined>("~opencode/WorkspaceRef", {
   defaultValue: () => undefined,
 })
+

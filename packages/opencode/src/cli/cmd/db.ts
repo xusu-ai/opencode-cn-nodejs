@@ -1,8 +1,8 @@
 import type { Argv } from "yargs"
 import { spawn } from "child_process"
 import { Database } from "../../storage"
-import { drizzle } from "drizzle-orm/bun-sqlite"
-import { Database as BunDatabase } from "bun:sqlite"
+import { drizzle } from "drizzle-orm/node-sqlite"
+import { DatabaseSync as BunDatabase } from "node:sqlite"
 import { UI } from "../ui"
 import { cmd } from "./cmd"
 import { JsonMigration } from "../../storage"
@@ -28,9 +28,9 @@ const QueryCommand = cmd({
   handler: async (args: { query?: string; format: string }) => {
     const query = args.query as string | undefined
     if (query) {
-      const db = new BunDatabase(Database.Path, { readonly: true })
+      const db = new BunDatabase(Database.Path, { readOnly: true })
       try {
-        const result = db.query(query).all() as Record<string, unknown>[]
+        const result = (db as unknown as { query: (q: string) => { all: () => Record<string, unknown>[] } }).query(query).all()
         if (args.format === "json") {
           console.log(JSON.stringify(result, null, 2))
         } else if (result.length > 0) {

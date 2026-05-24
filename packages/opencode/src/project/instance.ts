@@ -16,7 +16,11 @@ export interface InstanceContext {
 
 const context = LocalContext.create<InstanceContext>("instance")
 const cache = new Map<string, Promise<InstanceContext>>()
-const project = makeRuntime(Project.Service, Project.defaultLayer)
+let _project: ReturnType<typeof makeRuntime<typeof Project.Service, any, any>> | undefined
+const getProject = () => {
+  if (!_project) _project = makeRuntime(Project.Service, Project.defaultLayer)
+  return _project
+}
 
 const disposal = {
   all: undefined as Promise<void> | undefined,
@@ -31,7 +35,7 @@ function boot(input: { directory: string; init?: () => Promise<any>; worktree?: 
             worktree: input.worktree,
             project: input.project,
           }
-        : await project
+        : await getProject()
             .runPromise((svc) => svc.fromDirectory(input.directory))
             .then(({ project, sandbox }) => ({
               directory: input.directory,

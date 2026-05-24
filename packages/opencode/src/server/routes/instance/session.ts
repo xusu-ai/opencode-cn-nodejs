@@ -879,14 +879,26 @@ export const SessionRoutes = lazy(() =>
         return stream(c, async (stream) => {
           const sessionID = c.req.valid("param").sessionID
           const body = c.req.valid("json")
-          const msg = await runRequest(
-            "SessionRoutes.prompt",
-            c,
-            SessionPrompt.Service.use((svc) =>
-              svc.prompt({ ...body, sessionID } as unknown as SessionPrompt.PromptInput),
-            ),
-          )
-          void stream.write(JSON.stringify(msg))
+          try {
+            const msg = await runRequest(
+              "SessionRoutes.prompt",
+              c,
+              SessionPrompt.Service.use((svc) =>
+                svc.prompt({ ...body, sessionID } as unknown as SessionPrompt.PromptInput),
+              ),
+            )
+            void stream.write(JSON.stringify(msg))
+          } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : String(err)
+            if (err instanceof Error && err.name === "AbortError") {
+              log.info("prompt aborted by client", { sessionID })
+              return
+            }
+            log.error("prompt failed", { sessionID, error: err })
+            void stream.write(
+              JSON.stringify({ error: true, message: errorMessage, type: "provider_error" }),
+            )
+          }
         })
       },
     )

@@ -84,11 +84,12 @@ function Install(props: { api: TuiPluginApi }) {
           .install(mod, { global: global() })
           .then((out) => {
             if (!out.ok) {
+              const fail = out as { ok: false; message?: string; missing?: boolean }
               props.api.ui.toast({
                 variant: "error",
-                message: out.message,
+                message: fail.message,
               })
-              if (out.missing) {
+              if (fail.missing) {
                 props.api.ui.toast({
                   variant: "info",
                   message: t("tui.plugin.checkNpm"),

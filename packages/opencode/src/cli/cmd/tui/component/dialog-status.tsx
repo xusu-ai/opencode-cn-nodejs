@@ -1,5 +1,5 @@
 import { TextAttributes } from "@opentui/core"
-import { fileURLToPath } from "bun"
+import { fileURLToPath } from "node:url"
 import { useTheme } from "../context/theme"
 import { useI18n } from "../context/i18n"
 import { useDialog } from "@tui/ui/dialog"

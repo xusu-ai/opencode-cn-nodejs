@@ -2,7 +2,6 @@ import { Cause, Duration, Effect, Layer, Schedule, Schema, Semaphore, Context, S
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process"
 import { formatPatch, structuredPatch } from "diff"
 import path from "path"
-import z from "zod"
 import * as CrossSpawnSpawner from "@/effect/cross-spawn-spawner"
 import { InstanceState } from "@/effect"
 import { AppFileSystem } from "@opencode-ai/shared/filesystem"
@@ -209,7 +208,7 @@ export const layer: Layer.Layer<
 
         const add = Effect.fnUntraced(function* () {
           yield* sync()
-          const [diff, other] = yield* Effect.all(
+          const [diffResult, otherResult] = yield* Effect.all(
             [
               git([...quote, ...args(["diff-files", "--name-only", "-z", "--", "."])], {
                 cwd: state.directory,
@@ -220,18 +219,18 @@ export const layer: Layer.Layer<
             ],
             { concurrency: 2 },
           )
-          if (diff.code !== 0 || other.code !== 0) {
+          if (diffResult.code !== 0 || otherResult.code !== 0) {
             log.warn("failed to list snapshot files", {
-              diffCode: diff.code,
-              diffStderr: diff.stderr,
-              otherCode: other.code,
-              otherStderr: other.stderr,
+              diffCode: diffResult.code,
+              diffStderr: diffResult.stderr,
+              otherCode: otherResult.code,
+              otherStderr: otherResult.stderr,
             })
             return
           }
 
-          const tracked = diff.text.split("\0").filter(Boolean)
-          const untracked = other.text.split("\0").filter(Boolean)
+          const tracked = diffResult.text.split("\0").filter(Boolean)
+          const untracked = otherResult.text.split("\0").filter(Boolean)
           const all = Array.from(new Set([...tracked, ...untracked]))
           if (!all.length) return
 
@@ -308,6 +307,10 @@ export const layer: Layer.Layer<
               }
               yield* add()
               const result = yield* git(args(["write-tree"]), { cwd: state.directory })
+              if (result.code !== 0) {
+                log.error("write-tree failed", { code: result.code, stderr: result.stderr })
+                return ""
+              }
               const hash = result.text.trim()
               log.info("tracking", { hash, cwd: state.directory, git: state.gitdir })
               return hash
